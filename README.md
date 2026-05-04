@@ -5,6 +5,7 @@ git clone --recurse-submodules https://github.com/wassilysavin/GEMpRF-Assistant.
 cd GEMpRF-Assistant
 python3 -m venv .venv
 source .venv/bin/activate
+pip install --upgrade pip
 pip install -e .
 ```
 
