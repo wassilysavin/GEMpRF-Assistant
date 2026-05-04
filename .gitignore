@@ -1,0 +1,14 @@
+.env
+.env.*
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+data/weaviate/
+data/kg.ttl
+datasets/paper_eval_results.json
+datasets/*.jsonl.bak
+datasets/*_expansion.jsonl
+.pytest_cache/
+tests/
+.DS_Store
