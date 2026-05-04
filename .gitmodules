@@ -1,0 +1,6 @@
+[submodule "external/GEMpRF-DemoKit"]
+	path = external/GEMpRF-DemoKit
+	url = https://github.com/siddmittal/GEMpRF-DemoKit.git
+[submodule "external/github/GEMpRF"]
+	path = external/github/GEMpRF
+	url = https://github.com/gemprf/GEMpRF.git
