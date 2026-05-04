@@ -1,8 +1,10 @@
 ## Setup
 
 ```bash
-git clone --recurse-submodules https://github.com/wassilysavin/shenzhou3.git
-cd shenzhou3
+git clone --recurse-submodules https://github.com/wassilysavin/GEMpRF-Assistant.git
+cd GEMpRF-Assistant
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -e .
 ```
 
