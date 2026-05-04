@@ -69,7 +69,10 @@ class WeaviateHierarchicalStore:
                 grpc_port=self._grpc_port,
             )
         Path(self._persistence_path).mkdir(parents=True, exist_ok=True)
-        return weaviate.connect_to_embedded(persistence_data_path=self._persistence_path)
+        return weaviate.connect_to_embedded(
+            persistence_data_path=self._persistence_path,
+            environment_variables={"LOG_LEVEL": "panic"},
+        )
 
     def close(self) -> None:
         if self._client is not None:

@@ -1,5 +1,13 @@
 import argparse
 import json
+import os
+
+os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
+
+from transformers.utils import logging as _hf_logging
+
+_hf_logging.disable_progress_bar()
 
 try:
     from dotenv import load_dotenv
