@@ -1,7 +1,5 @@
 ## Setup
 
-Requires Python >= 3.10.
-
 ```bash
 git clone --recurse-submodules https://github.com/wassilysavin/GEMpRF-Assistant.git
 cd GEMpRF-Assistant
