@@ -242,14 +242,25 @@ class GraphRagEngine:
             first_pass, rerank_used = self.reranker.rerank(retrieval_query, first_pass, top_k=_RERANK_POOL_SIZE)
 
         evidence = self._select_evidence(first_pass, top_k)
-        citations = self._build_citations(evidence, matched_specs)
+        # Ground the question-only parameter match against the retrieved evidence:
+        # only surface a parameter as authoritative context (prompt + citations +
+        # reported match) when its id actually appears in the evidence we answer
+        # from. The unfiltered match above is still used as a retrieval seed, but
+        # a spurious match must not inject unsupported parameter context.
+        evidence_parameter_ids = {
+            pid
+            for retrieved in evidence
+            for pid in retrieved.chunk.metadata.parameter_ids
+        }
+        grounded_specs = [spec for spec in matched_specs if spec.id in evidence_parameter_ids]
+        citations = self._build_citations(evidence, grounded_specs)
         if not self._has_supporting_evidence(evidence, rerank_used):
             return QueryAnalysis(
                 question=question,
                 answer=INSUFFICIENT_EVIDENCE_MESSAGE,
                 status="insufficient_evidence",
-                matched_parameter_ids=[spec.id for spec in matched_specs],
-                matched_parameter_labels=[spec.label for spec in matched_specs],
+                matched_parameter_ids=[spec.id for spec in grounded_specs],
+                matched_parameter_labels=[spec.label for spec in grounded_specs],
                 evidence=self._to_evidence_items(evidence),
                 citations=citations,
                 used_llm=False,
@@ -257,13 +268,13 @@ class GraphRagEngine:
                 rewritten_query=rewritten,
             )
 
-        answer, used_llm = self._generate_answer(question, matched_specs, evidence, rewritten)
+        answer, used_llm = self._generate_answer(question, grounded_specs, evidence, rewritten)
         return QueryAnalysis(
             question=question,
             answer=answer,
             status="supported",
-            matched_parameter_ids=[spec.id for spec in matched_specs],
-            matched_parameter_labels=[spec.label for spec in matched_specs],
+            matched_parameter_ids=[spec.id for spec in grounded_specs],
+            matched_parameter_labels=[spec.label for spec in grounded_specs],
             evidence=self._to_evidence_items(evidence),
             citations=citations,
             used_llm=used_llm,
