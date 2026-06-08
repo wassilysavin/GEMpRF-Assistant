@@ -227,7 +227,11 @@ class GraphRagEngine:
         }
 
     def analyze(self, question: str, top_k: int = _DEFAULT_TOP_K) -> QueryAnalysis:
-        rewritten = self._hyde_query(question) or self._rewrite_query(question)
+        # Deterministic catalog expansion front-runs the LLM rewrite: when the
+        # question names a known parameter, its aliases/enum values are the correct
+        # BM25 keywords already — no LLM call needed. The LLM rewrite stays as the
+        # fallback for fuzzy/conceptual questions that match no parameter.
+        rewritten = self._hyde_query(question) or self._expand_via_catalog(question) or self._rewrite_query(question)
         retrieval_query = rewritten or question
 
         question_embedding = self.embedding_backend.embed_texts([retrieval_query])[0]
@@ -503,6 +507,35 @@ class GraphRagEngine:
         if not keywords:
             return None
         return f"{question.strip()} {' '.join(keywords)}"
+
+    def _expand_via_catalog(self, question: str) -> str | None:
+        """Append a named parameter's aliases + enum values as deterministic, BM25-only keywords."""
+        if os.getenv("GEMPRF_ASSISTANT_CATALOG_EXPANSION", "1").strip() == "0":
+            return None
+        q_lower = question.lower()
+        additions: list[str] = []
+        seen: set[str] = set()
+        for spec in self.parameters.values():
+            named = False
+            for name in (spec.id, spec.label, *spec.aliases):
+                if not name or len(name) < 3:
+                    continue
+                if re.search(rf"\b{re.escape(name.lower())}\b", q_lower):
+                    named = True
+                    break
+            if not named:
+                continue
+            for token in (spec.label, *spec.aliases, *spec.enum_values):
+                if not token:
+                    continue
+                lower = token.lower()
+                if lower in seen or lower in q_lower:
+                    continue
+                seen.add(lower)
+                additions.append(token)
+        if not additions:
+            return None
+        return f"{question.strip()} {' '.join(additions)}"
 
     def _generate_answer(
         self,
