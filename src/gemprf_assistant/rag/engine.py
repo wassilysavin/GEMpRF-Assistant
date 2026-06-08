@@ -119,6 +119,13 @@ class GraphRagEngine:
         )
         self.llm = None if llm is False else (llm if llm is not None else self._build_llm())
         self.small_to_big = os.getenv("GEMPRF_SMALL_TO_BIG", "0").strip() == "1"
+        # Dense/BM25 query split (experiment). Query rewrite appends LLM keywords
+        # to the question; that string helps BM25 lexically but blurs the dense
+        # embedding's centroid (a known dense-retrieval anti-pattern). When ON,
+        # the dense vector is built from the *original* question while the
+        # expanded string is reserved for BM25. HyDE is exempt: its hypothetical
+        # document is designed to be embedded, so it still drives the dense side.
+        self.dense_split = os.getenv("GEMPRF_DENSE_SPLIT", "0").strip() == "1"
 
         if auto_ingest and not self._is_populated():
             self.ingest()
@@ -227,14 +234,22 @@ class GraphRagEngine:
         }
 
     def analyze(self, question: str, top_k: int = _DEFAULT_TOP_K) -> QueryAnalysis:
+        hyde = self._hyde_query(question)
         # Deterministic catalog expansion front-runs the LLM rewrite: when the
         # question names a known parameter, its aliases/enum values are the correct
         # BM25 keywords already — no LLM call needed. The LLM rewrite stays as the
         # fallback for fuzzy/conceptual questions that match no parameter.
-        rewritten = self._hyde_query(question) or self._expand_via_catalog(question) or self._rewrite_query(question)
+        rewritten = hyde or self._expand_via_catalog(question) or self._rewrite_query(question)
         retrieval_query = rewritten or question
 
-        question_embedding = self.embedding_backend.embed_texts([retrieval_query])[0]
+        # BM25 always sees the expanded string; the dense vector's source depends
+        # on the split toggle. HyDE-derived expansions stay on the dense side
+        # (they are meant to be embedded); keyword rewrites are split off it.
+        if self.dense_split and hyde is None:
+            dense_source = question
+        else:
+            dense_source = retrieval_query
+        question_embedding = self.embedding_backend.embed_texts([dense_source])[0]
 
         matched_pairs = self.parameter_matcher.match_with_scores(question_embedding)
         matched_specs = [spec for spec, _ in matched_pairs]
@@ -292,6 +307,7 @@ class GraphRagEngine:
             "embedding_backend": self.embedding_backend.backend_name,
             "llm_enabled": self.llm is not None,
             "small_to_big": self.small_to_big,
+            "dense_split": self.dense_split,
             "reranker": self._reranker_status(),
             "kg_path": str(self.knowledge_graph.path) if self.knowledge_graph.path else None,
         }
