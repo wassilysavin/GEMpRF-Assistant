@@ -258,19 +258,36 @@ class WeaviateHierarchicalStore:
         for item in response.objects:
             props = item.properties or {}
             score = float(item.metadata.score) if item.metadata and item.metadata.score is not None else 0.0
-            chunk_meta = ChunkMetadata(
-                chunk_id=str(props.get("chunk_id", "")),
-                source_id=str(props.get("source_id", "")),
-                source_kind=str(props.get("source_kind", "")),
-                parent_id=str(props.get("parent_id") or "") or None,
-                heading_path=tuple(props.get("heading_path") or ()),
-                char_span=(int(props.get("char_start") or 0), int(props.get("char_end") or 0)),
-                token_count=int(props.get("token_count") or 0),
-                parameter_ids=tuple(props.get("parameter_ids") or ()),
-                doc_kind=str(props.get("doc_kind") or "prose"),
-            )
-            out.append(ChunkHit(chunk=Chunk(metadata=chunk_meta, text=str(props.get("text", ""))), score=score))
+            out.append(ChunkHit(chunk=self._chunk_from_props(props), score=score))
         return out
+
+    def fetch_children_by_parent(self, parent_ids: tuple[str, ...]) -> list[Chunk]:
+        """Fetch every child chunk of the given sections (unscored) so callers can
+        reconstruct full section text for small-to-big context expansion.
+        """
+        if not parent_ids:
+            return []
+        coll = self.client.collections.get(CHUNK_COLLECTION)
+        response = coll.query.fetch_objects(
+            filters=self._parent_filter(parent_ids),
+            limit=10_000,
+        )
+        return [self._chunk_from_props(item.properties or {}) for item in response.objects]
+
+    @staticmethod
+    def _chunk_from_props(props: dict) -> Chunk:
+        meta = ChunkMetadata(
+            chunk_id=str(props.get("chunk_id", "")),
+            source_id=str(props.get("source_id", "")),
+            source_kind=str(props.get("source_kind", "")),
+            parent_id=str(props.get("parent_id") or "") or None,
+            heading_path=tuple(props.get("heading_path") or ()),
+            char_span=(int(props.get("char_start") or 0), int(props.get("char_end") or 0)),
+            token_count=int(props.get("token_count") or 0),
+            parameter_ids=tuple(props.get("parameter_ids") or ()),
+            doc_kind=str(props.get("doc_kind") or "prose"),
+        )
+        return Chunk(metadata=meta, text=str(props.get("text", "")))
 
     @staticmethod
     def _kind_filter(source_kinds: tuple[str, ...] | None):

@@ -44,6 +44,12 @@ _RERANK_POOL_SIZE = 24
 _MIN_EVIDENCE_SCORE = 1e-6
 _MAX_CITATIONS = 6
 
+# Small-to-big expansion (experiment): feed the LLM the full section surrounding
+# each winning leaf instead of the isolated chunk. Toggled per-process via env so
+# the eval harness can A/B the same build. Caps bound the prompt size.
+_S2B_MAX_SECTIONS = int(os.getenv("GEMPRF_S2B_MAX_SECTIONS", "4"))
+_S2B_MAX_CHARS = int(os.getenv("GEMPRF_S2B_MAX_CHARS", "6000"))
+
 _SUBJECT_PATTERNS = (
     re.compile(r"^\s*what\s+does\s+(.+?)\s+(?:stand\s+for|mean|denote|describe|do)\b", re.IGNORECASE),
     re.compile(r"^\s*what\s+is\s+meant\s+by\s+['\"]?(.+?)['\"]?(?:\s+in\b|\s+for\b|$)", re.IGNORECASE),
@@ -112,6 +118,14 @@ class GraphRagEngine:
             list(self.parameters.values()), self.embedding_backend.embed_texts
         )
         self.llm = None if llm is False else (llm if llm is not None else self._build_llm())
+        self.small_to_big = os.getenv("GEMPRF_SMALL_TO_BIG", "0").strip() == "1"
+        # Dense/BM25 query split (experiment). Query rewrite appends LLM keywords
+        # to the question; that string helps BM25 lexically but blurs the dense
+        # embedding's centroid (a known dense-retrieval anti-pattern). When ON,
+        # the dense vector is built from the *original* question while the
+        # expanded string is reserved for BM25. HyDE is exempt: its hypothetical
+        # document is designed to be embedded, so it still drives the dense side.
+        self.dense_split = os.getenv("GEMPRF_DENSE_SPLIT", "0").strip() == "1"
 
         if auto_ingest and not self._is_populated():
             self.ingest()
@@ -220,10 +234,22 @@ class GraphRagEngine:
         }
 
     def analyze(self, question: str, top_k: int = _DEFAULT_TOP_K) -> QueryAnalysis:
-        rewritten = self._hyde_query(question) or self._rewrite_query(question)
+        hyde = self._hyde_query(question)
+        # Deterministic catalog expansion front-runs the LLM rewrite: when the
+        # question names a known parameter, its aliases/enum values are the correct
+        # BM25 keywords already — no LLM call needed. The LLM rewrite stays as the
+        # fallback for fuzzy/conceptual questions that match no parameter.
+        rewritten = hyde or self._expand_via_catalog(question) or self._rewrite_query(question)
         retrieval_query = rewritten or question
 
-        question_embedding = self.embedding_backend.embed_texts([retrieval_query])[0]
+        # BM25 always sees the expanded string; the dense vector's source depends
+        # on the split toggle. HyDE-derived expansions stay on the dense side
+        # (they are meant to be embedded); keyword rewrites are split off it.
+        if self.dense_split and hyde is None:
+            dense_source = question
+        else:
+            dense_source = retrieval_query
+        question_embedding = self.embedding_backend.embed_texts([dense_source])[0]
 
         matched_pairs = self.parameter_matcher.match_with_scores(question_embedding)
         matched_specs = [spec for spec, _ in matched_pairs]
@@ -280,6 +306,8 @@ class GraphRagEngine:
             "num_sections": self._safe(lambda: self.vector_store.count_sections()),
             "embedding_backend": self.embedding_backend.backend_name,
             "llm_enabled": self.llm is not None,
+            "small_to_big": self.small_to_big,
+            "dense_split": self.dense_split,
             "reranker": self._reranker_status(),
             "kg_path": str(self.knowledge_graph.path) if self.knowledge_graph.path else None,
         }
@@ -496,6 +524,35 @@ class GraphRagEngine:
             return None
         return f"{question.strip()} {' '.join(keywords)}"
 
+    def _expand_via_catalog(self, question: str) -> str | None:
+        """Append a named parameter's aliases + enum values as deterministic, BM25-only keywords."""
+        if os.getenv("GEMPRF_ASSISTANT_CATALOG_EXPANSION", "1").strip() == "0":
+            return None
+        q_lower = question.lower()
+        additions: list[str] = []
+        seen: set[str] = set()
+        for spec in self.parameters.values():
+            named = False
+            for name in (spec.id, spec.label, *spec.aliases):
+                if not name or len(name) < 3:
+                    continue
+                if re.search(rf"\b{re.escape(name.lower())}\b", q_lower):
+                    named = True
+                    break
+            if not named:
+                continue
+            for token in (spec.label, *spec.aliases, *spec.enum_values):
+                if not token:
+                    continue
+                lower = token.lower()
+                if lower in seen or lower in q_lower:
+                    continue
+                seen.add(lower)
+                additions.append(token)
+        if not additions:
+            return None
+        return f"{question.strip()} {' '.join(additions)}"
+
     def _generate_answer(
         self,
         question: str,
@@ -526,7 +583,7 @@ class GraphRagEngine:
             "question": question,
             "expanded_query_context": rewritten_query or "- none",
             "parameter_context": self._parameter_context(matched_specs),
-            "evidence_context": self._evidence_context(evidence),
+            "evidence_context": self._evidence_context_for_prompt(evidence),
         })
         return str(response.content).strip()
 
@@ -540,6 +597,44 @@ class GraphRagEngine:
             f"- {p.label} ({p.xml_path}): {p.summary} {p.significance}"
             for p in matched_specs
         )
+
+    def _evidence_context_for_prompt(self, evidence: list[RetrievedChunk]) -> str:
+        """Build the evidence block the LLM reads. With small-to-big enabled, the
+        isolated leaf chunks are replaced by the full sections they belong to.
+        """
+        if self.small_to_big:
+            expanded = self._expand_to_sections(evidence)
+            if expanded:
+                return expanded
+        return self._evidence_context(evidence)
+
+    def _expand_to_sections(self, evidence: list[RetrievedChunk]) -> str:
+        """Rebuild each winning leaf's parent section from its children in document order, in rank order, capped by section count and char budget."""
+        parent_order: list[str] = []
+        seen: set[str] = set()
+        for r in evidence:
+            pid = r.chunk.metadata.parent_id
+            if pid and pid not in seen:
+                seen.add(pid)
+                parent_order.append(pid)
+        parent_order = parent_order[:_S2B_MAX_SECTIONS]
+        if not parent_order:
+            return ""
+
+        children = self.vector_store.fetch_children_by_parent(tuple(parent_order))
+        by_parent: dict[str, list[Chunk]] = {}
+        for c in children:
+            by_parent.setdefault(c.metadata.parent_id or "", []).append(c)
+
+        blocks: list[str] = []
+        for pid in parent_order:
+            kids = sorted(by_parent.get(pid, []), key=lambda c: c.metadata.char_span[0])
+            if not kids:
+                continue
+            text = "\n".join(k.text for k in kids)[:_S2B_MAX_CHARS]
+            head = kids[0].metadata
+            blocks.append(f"[{head.source_id} {' > '.join(head.heading_path)}] {text}")
+        return "\n\n".join(blocks)
 
     @staticmethod
     def _evidence_context(evidence: list[RetrievedChunk]) -> str:
