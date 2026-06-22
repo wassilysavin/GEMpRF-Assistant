@@ -157,8 +157,12 @@ class GraphRagEngine:
             for c in chunks
         ]
 
+        # Optional synthetic-question augmentation for dense recall (stored text
+        # unchanged); no-op unless HYPO_QUESTIONS=1.
+        from .augment import augment_texts
+        embed_inputs = augment_texts([c.text for c in chunks])
         chunk_vectors = (
-            self.embedding_backend.embed_texts([c.text for c in chunks])
+            self.embedding_backend.embed_texts(embed_inputs)
             if chunks
             else np.zeros((0, 1), dtype=np.float32)
         )
@@ -223,7 +227,10 @@ class GraphRagEngine:
         rewritten = self._hyde_query(question) or self._rewrite_query(question)
         retrieval_query = rewritten or question
 
-        question_embedding = self.embedding_backend.embed_texts([retrieval_query])[0]
+        # Use the query-side embedding (applies the model's query prefix for
+        # instruction-tuned embedders like e5; a no-op for plain models).
+        _embed_q = getattr(self.embedding_backend, "embed_query", self.embedding_backend.embed_texts)
+        question_embedding = _embed_q([retrieval_query])[0]
 
         matched_pairs = self.parameter_matcher.match_with_scores(question_embedding)
         matched_specs = [spec for spec, _ in matched_pairs]
@@ -504,13 +511,24 @@ class GraphRagEngine:
         rewritten_query: str | None = None,
     ) -> tuple[str, bool]:
         if self.llm is not None:
-            try:
-                answer = self._generate_with_llm(question, matched_specs, evidence, rewritten_query)
-                if not answer.startswith("INSUFFICIENT_EVIDENCE:"):
-                    return _strip_citations(answer), True
-                return INSUFFICIENT_EVIDENCE_MESSAGE, False
-            except Exception:
-                pass
+            import time as _time
+            attempts = int(os.getenv("GEMPRF_ASSISTANT_LLM_RETRIES", "3"))
+            last_exc = None
+            for i in range(attempts):
+                try:
+                    answer = self._generate_with_llm(question, matched_specs, evidence, rewritten_query)
+                    if not answer.startswith("INSUFFICIENT_EVIDENCE:"):
+                        return _strip_citations(answer), True
+                    return INSUFFICIENT_EVIDENCE_MESSAGE, False
+                except Exception as exc:  # usually transient (rate limit / timeout)
+                    last_exc = exc
+                    if i < attempts - 1:
+                        _time.sleep(1.5 * (i + 1))
+            # Degrade to extractive only after retries; log it so silent
+            # fallbacks (Finding H) stay visible instead of looking like real answers.
+            import sys as _sys
+            print(f"[_generate_answer] LLM failed after {attempts} attempts: "
+                  f"{type(last_exc).__name__}: {str(last_exc)[:160]}", file=_sys.stderr, flush=True)
         return self._extractive(evidence), False
 
     def _generate_with_llm(

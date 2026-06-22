@@ -30,6 +30,12 @@ class CaseResult:
     judge_score: int | None = None
     judge_grounded: bool | None = None
     judge_rationale: str | None = None
+    # Answer-quality signal (judge-derived), kept separate from retrieval_hit so
+    # the two are never conflated. score >= 1 AND grounded.
+    answer_correct: bool | None = None
+    # When repeats>1, the per-run judge scores (answer is regenerated each run).
+    # judge_score holds the modal score; this exposes the generation variance.
+    judge_score_runs: list | None = None
     ragas_faithfulness: float | None = None
     ragas_answer_relevancy: float | None = None
     ragas_context_precision: float | None = None
@@ -52,14 +58,29 @@ def load_eval_set(path: Path = DEFAULT_EVAL_PATH) -> list[dict]:
     return cases
 
 
+def _norm(s: str) -> str:
+    """Lowercase + collapse whitespace so gold-substring matching is robust to
+    line-wrapping and casing in chunk text (avoids false retrieval misses)."""
+    return re.sub(r"\s+", " ", s or "").strip().lower()
+
+
 def score_retrieval(case: dict, evidence: list[dict]) -> tuple[bool | None, int | None]:
-    if case["type"] in ("negative", "synthesis"):
+    # Only true negatives (expected refusals) have no gold to match. Synthesis
+    # cases DO carry a gold_substring that should appear in a retrieved chunk,
+    # so they get a real retrieval signal here — answer quality is judged
+    # separately via answer_correct (see evaluate()).
+    if case["type"] == "negative":
         return None, None
-    needle = (case.get("gold_substring") or "").strip()
-    if not needle:
+    needle = _norm(case.get("gold_substring") or "")
+    gold_src = set(case.get("gold_source_ids") or [])
+    if not needle and not gold_src:
         return None, None
+    # A hit = the gold chunk was retrieved, by EITHER the gold substring appearing
+    # in a chunk OR a retrieved chunk coming from a gold source. The source-id match
+    # is what makes synthesis/paraphrase fair: their answers paraphrase across chunks,
+    # so the verbatim substring often isn't present even when the right chunk is.
     for rank, item in enumerate(evidence, start=1):
-        if needle in item.get("text", ""):
+        if (needle and needle in _norm(item.get("text", ""))) or (item.get("source_id") in gold_src):
             return True, rank
     return False, None
 
@@ -166,7 +187,7 @@ def build_judge():
         if not has_xai:
             return None
         return ChatOpenAI(
-            model=os.getenv("GEMPRF_ASSISTANT_XAI_MODEL", "grok-4.20-reasoning"),
+            model=os.getenv("GEMPRF_ASSISTANT_XAI_MODEL", "grok-4.3"),
             api_key=os.getenv("XAI_API_KEY"),
             base_url=os.getenv("GEMPRF_ASSISTANT_XAI_BASE_URL", "https://api.x.ai/v1"),
             temperature=0,
@@ -299,6 +320,7 @@ def aggregate(results: Iterable[CaseResult]) -> dict:
         precisions = [r.precision_at_k for r in group if r.precision_at_k is not None]
         scores = [r.judge_score for r in group if r.judge_score is not None]
         grounded = [r.judge_grounded for r in group if r.judge_grounded is not None]
+        acorr = [r.answer_correct for r in group if r.answer_correct is not None]
         faith = [r.ragas_faithfulness for r in group if r.ragas_faithfulness is not None]
         relev = [r.ragas_answer_relevancy for r in group if r.ragas_answer_relevancy is not None]
         cprec = [r.ragas_context_precision for r in group if r.ragas_context_precision is not None]
@@ -312,6 +334,7 @@ def aggregate(results: Iterable[CaseResult]) -> dict:
             "avg_score": (mean(scores)) if scores else None,
             "score_2_rate": (sum(1 for s in scores if s == 2) / len(scores)) if scores else None,
             "grounded_rate": (sum(1 for g in grounded if g) / len(grounded)) if grounded else None,
+            "answer_correct_rate": (sum(1 for a in acorr if a) / len(acorr)) if acorr else None,
             "faithfulness": mean(faith) if faith else None,
             "answer_relevancy": mean(relev) if relev else None,
             "context_precision": mean(cprec) if cprec else None,
@@ -330,7 +353,7 @@ def format_table(agg: dict) -> str:
     """
     header = (
         f"{'category':<14}{'n':>4}{'hit@k':>8}"
-        f"{'mrr':>7}{'avg':>7}{'2-rate':>9}{'grnd':>8}{'faith':>8}{'crec':>8}{'lat(s)':>9}"
+        f"{'mrr':>7}{'avg':>7}{'2-rate':>9}{'acorr':>8}{'grnd':>8}{'faith':>8}{'crec':>8}{'lat(s)':>9}"
     )
     rows = [header, "-" * len(header)]
     for name, stats in sorted(agg["by_type"].items()) + [("overall", agg["overall"])]:
@@ -345,6 +368,7 @@ def format_table(agg: dict) -> str:
             f"{fmt(stats['mrr']):>7}"
             f"{fmt(stats['avg_score']):>7}"
             f"{fmt(stats['score_2_rate'], pct=True):>9}"
+            f"{fmt(stats.get('answer_correct_rate'), pct=True):>8}"
             f"{fmt(stats['grounded_rate'], pct=True):>8}"
             f"{fmt(stats['faithfulness']):>8}"
             f"{fmt(stats.get('context_recall')):>8}"
@@ -362,6 +386,7 @@ def evaluate(
     no_judge: bool = False,
     ragas_metrics: dict | None = None,
     enable_ragas: bool = False,
+    repeats: int = 1,
     on_progress=None,
 ) -> dict:
     cases = cases if cases is not None else load_eval_set()
@@ -401,18 +426,29 @@ def evaluate(
         )
         if judge is not None:
             j = judge_case(judge, case, ans["answer"], evidence)
+            # repeats>1 de-noises the (noisy) answer generation: regenerate +
+            # rejudge k-1 more times and take the modal score. Retrieval is
+            # deterministic, so only the generation/judge step is repeated.
+            if repeats > 1:
+                runs = [j]
+                for _ in range(repeats - 1):
+                    extra = engine.ask_dict(case["question"], top_k=top_k)
+                    runs.append(judge_case(judge, case, extra["answer"], extra["evidence"]))
+                scored = [r["score"] for r in runs if r["score"] is not None]
+                case_result.judge_score_runs = [r["score"] for r in runs]
+                if scored:
+                    mode = max(set(scored), key=scored.count)
+                    j = next(r for r in runs if r["score"] == mode)
             case_result.judge_score = j["score"]
             case_result.judge_grounded = j["grounded"]
             case_result.judge_rationale = j["rationale"]
-            # Synthesis answers are paraphrased by design, substring
-            # matching produces false misses. Use the judge as ground truth
-            # (hit = score >= 1 AND grounded). Rank stays None, so synthesis
-            # is excluded from MRR.
-            if case["type"] == "synthesis" and case_result.judge_score is not None:
-                judge_hit = case_result.judge_score >= 1 and bool(case_result.judge_grounded)
-                case_result.retrieval_hit = judge_hit
-                case_result.retrieval_rank = None
-                case_result.recall_at_k, case_result.precision_at_k = score_recall_precision(judge_hit, top_k)
+            # Answer quality is a generation metric — keep it OUT of retrieval_hit.
+            # retrieval_hit now reflects real chunk retrieval (incl. synthesis,
+            # via score_retrieval); answer_correct carries the judge verdict.
+            if case_result.judge_score is not None:
+                case_result.answer_correct = (
+                    case_result.judge_score >= 1 and bool(case_result.judge_grounded)
+                )
         if ragas_metrics is not None:
             r = ragas_score_case(ragas_metrics, case, ans["answer"], evidence)
             # Refusals contain no factual claims, so Faithfulness has nothing
@@ -441,6 +477,9 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--offset", type=int, default=0, help="Skip the first N cases.")
     parser.add_argument("--top-k", type=int, default=6)
     parser.add_argument("--no-judge", action="store_true")
+    parser.add_argument("--repeat", type=int, default=1,
+                        help="Regenerate+rejudge each case N times and take the modal "
+                             "judge score (de-noises grok answer-generation variance).")
     parser.add_argument(
         "--ragas",
         action="store_true",
@@ -459,7 +498,11 @@ def main(argv: list[str] | None = None) -> None:
         cases = cases[args.offset:]
     if args.limit:
         cases = cases[: args.limit]
-    print(f"loaded {len(cases)} cases from {args.dataset.relative_to(ROOT)}")
+    try:
+        _ds = args.dataset.resolve().relative_to(ROOT)
+    except ValueError:
+        _ds = args.dataset
+    print(f"loaded {len(cases)} cases from {_ds}")
 
     engine = GraphRagEngine()
     sources_by_id = engine.sources
@@ -509,6 +552,7 @@ def main(argv: list[str] | None = None) -> None:
         judge=None if args.no_judge else build_judge(),
         no_judge=args.no_judge,
         enable_ragas=args.ragas,
+        repeats=args.repeat,
         on_progress=progress,
     )
 

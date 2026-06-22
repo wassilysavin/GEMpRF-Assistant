@@ -254,6 +254,37 @@ class WeaviateHierarchicalStore:
             return_metadata=MetadataQuery(score=True),
             filters=filters,
         )
+        return self._chunk_hits(response)
+
+    def chunks_by_parameters(
+        self,
+        query: str,
+        vector: np.ndarray,
+        limit: int,
+        alpha: float,
+        parameter_ids: tuple[str, ...],
+        source_kinds: tuple[str, ...] | None = None,
+    ) -> list[ChunkHit]:
+        """Hybrid search constrained to chunks tagged with ANY of `parameter_ids`
+        (the KG recall arm); returns in-filter hybrid scores for fair fusion."""
+        if not parameter_ids:
+            return []
+        coll = self.client.collections.get(CHUNK_COLLECTION)
+        filters = _and_filters(self._parameter_filter(parameter_ids), self._kind_filter(source_kinds))
+        response = coll.query.hybrid(
+            query=query,
+            vector=vector.astype(np.float32).tolist(),
+            alpha=alpha,
+            limit=limit,
+            query_properties=["text"],
+            return_metadata=MetadataQuery(score=True),
+            filters=filters,
+        )
+        return self._chunk_hits(response)
+
+    @staticmethod
+    def _chunk_hits(response) -> list[ChunkHit]:
+        """Parse a chunk hybrid-query response into ordered ChunkHit objects."""
         out: list[ChunkHit] = []
         for item in response.objects:
             props = item.properties or {}
@@ -271,6 +302,12 @@ class WeaviateHierarchicalStore:
             )
             out.append(ChunkHit(chunk=Chunk(metadata=chunk_meta, text=str(props.get("text", ""))), score=score))
         return out
+
+    @staticmethod
+    def _parameter_filter(parameter_ids: tuple[str, ...] | None):
+        if not parameter_ids:
+            return None
+        return Filter.by_property("parameter_ids").contains_any(list(parameter_ids))
 
     @staticmethod
     def _kind_filter(source_kinds: tuple[str, ...] | None):
