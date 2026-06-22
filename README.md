@@ -2,14 +2,14 @@
 
 ```
 category         n     avg   2-rate    grnd   hit@k   rec@k   lat(s)
----------------------------------------------------------------------
-definitional    42    1.76      79%    100%     81%     81%    14.03
-factual         45    1.73      82%    100%     76%     76%    13.16
-negative        69    1.93      96%     99%       —       —    17.31
-numerical       45    1.87      93%     98%     87%     87%    13.68
-paraphrase      39    1.62      79%     97%     64%     64%    17.76
-synthesis      164    1.88      92%     96%     95%     95%    14.66
-overall        404    1.83      89%     98%     86%     86%    15.07
+--------------------------------------------------------------------
+definitional   10    1.80      90%    100%     90%     90%    25.66
+factual        11    1.91      91%    100%     91%     91%    16.37
+negative       13    2.00     100%    100%       —       —    88.76
+numerical      11    2.00     100%    100%    100%    100%    45.05
+paraphrase     10    1.70      70%    100%    100%    100%    13.90
+synthesis      20    1.95      95%    100%    100%    100%    44.65
+overall        75    1.91      92%    100%     97%     97%    41.57
 ```
 
 ## Current Architecture
@@ -21,7 +21,7 @@ INGEST
         v
   heading-aware splitter  -->  sections (parents) + chunks (leaves, overlap)
         |                              |
-        |                              +--> embed --> Weaviate (GemPrfChunk, GemPrfSection)
+        |                              +--> embed (e5-large-v2; optional synthetic-question augmentation) --> Weaviate (GemPrfChunk, GemPrfSection)
         |
         +--> RDF knowledge graph (sources -- parameters -- sections -- chunks)
 
@@ -33,15 +33,14 @@ QUERY
   rewrite: HyDE (gated by rare-anchor check)  OR  LLM keyword-rewrite
     |
     v
-  embed once  +  ParameterMatcher (cosine vs. parameter specs)
+  embed once (e5 query prefix)  +  ParameterMatcher (cosine vs. parameter specs)
     |
     v
-  Hierarchical retrieval -- 4 rankings fused by RRF:
-      (1) hybrid vector+BM25 over parent sections
-      (2) hybrid over chunks, constrained to those parents
-      (3) unconstrained chunk backfill
-      (4) graph signal: KG 1-hop expansion of matched parameters
-                        (seeds full weight, neighbours discounted)
+  Hierarchical retrieval -- 3 recall arms fused by one magnitude-preserving scoring pass:
+      (1) hybrid vector+BM25 over chunks, constrained to top parent sections
+      (2) unconstrained chunk backfill
+      (3) graph recall: chunks tagged with matched parameters (KG 1-hop expanded)
+    fused on per-arm min-max-normalised scores (+ parent-match & graph boosts), not RRF
     |
     v
   cross-encoder rerank  -->  per-source diversity cap  -->  top-k
@@ -52,7 +51,7 @@ QUERY
     v
   LLM (OpenAI / xAI / Ollama) with system+human prompt
         - answer from evidence or emit INSUFFICIENT_EVIDENCE:
-        - on failure: extractive fallback (stitch top chunks)
+        - on failure: retry, then extractive fallback (stitch top chunks)
     |
     v
   strip [source.id] brackets  -->  AnswerResult { answer, citations, matched_params }
