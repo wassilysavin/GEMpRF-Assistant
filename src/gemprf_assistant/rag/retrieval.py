@@ -9,22 +9,12 @@ from .knowledge_graph import KnowledgeGraphStore
 from .vector_store import ChunkHit, SectionHit, WeaviateHierarchicalStore
 
 
-# RRF constant
-_RRF_K = 60
-
-# Discount on 1-hop graph neighbors vs. directly-matched seeds.
-_NEIGHBOR_DISCOUNT = 0.5
-
-
 def _diverse_topk(
     ordered: list[RetrievedChunk],
     limit: int,
     cap: int | None,
 ) -> list[RetrievedChunk]:
-    """
-    Reorders / filters an already score-sorted list of RetrievedChunk so the final list has length at most limit, 
-    but no single source_id contributes more than cap hits 
-    """
+    """Trim a score-sorted list to `limit`, capping hits per source_id at `cap`."""
     if cap is None or cap <= 0:
         return ordered[:limit]
     selected: list[RetrievedChunk] = []
@@ -47,19 +37,32 @@ def _diverse_topk(
     return selected
 
 
-def _rrf_combine(rankings: list[list[str]], k: int = _RRF_K) -> dict[str, float]:
-    """Reciprocal Rank Fusion over 'rankings'
-    """
-    score: defaultdict[str, float] = defaultdict(float)
-    for ranking in rankings:
-        for rank, cid in enumerate(ranking, 1):
-            score[cid] += 1.0 / (k + rank)
-    return score
+def _minmax(hits: list[ChunkHit]) -> dict[str, float]:
+    """Min-max normalise an arm's hybrid scores onto [0, 1] (keyed by chunk id),
+    keeping the relevance-gap magnitude that plain rank fusion discards."""
+    if not hits:
+        return {}
+    scores = [h.score for h in hits]
+    lo, hi = min(scores), max(scores)
+    rng = hi - lo
+    if rng <= 0:
+        return {h.chunk.metadata.chunk_id: 1.0 for h in hits}
+    return {h.chunk.metadata.chunk_id: (h.score - lo) / rng for h in hits}
+
+
+def _minmax_values(values: dict[str, float]) -> dict[str, float]:
+    """Min-max normalise an id->score mapping onto [0, 1]."""
+    if not values:
+        return {}
+    lo, hi = min(values.values()), max(values.values())
+    rng = hi - lo
+    if rng <= 0:
+        return {k: 1.0 for k in values}
+    return {k: (v - lo) / rng for k, v in values.items()}
 
 
 def _default_alpha() -> float:
-    """Read the env-tunable hybrid alpha for Weaviate's vector/BM25 blend.
-    """
+    """Read the env-tunable hybrid alpha for Weaviate's vector/BM25 blend."""
     raw = os.getenv("GEMPRF_ASSISTANT_HYBRID_ALPHA", "0.5")
     try:
         value = float(raw)
@@ -73,15 +76,18 @@ class RetrievalConfig:
     parent_top_n: int = 6
     child_per_parent: int = 6
     backfill_children: int = 12
-    graph_boost: float = 0.08             
-    parent_score_weight: float = 0.25    
+    graph_recall: int = 12                # chunks fetched by matched-parameter tag
+    # Additive boosts (scaled by a [0,1] signal) that nudge ordering without
+    # swamping a chunk's own normalised hybrid relevance.
+    parent_score_weight: float = 0.25     # boost for living in a strongly-matched parent
+    graph_boost: float = 0.15             # boost for being about a matched parameter
     hybrid_alpha: float = -1.0
-    rrf_k: int = _RRF_K
     max_per_source: int | None = 3
 
 
 class HierarchicalRetriever:
-    """Four-step recall pipeline (parent -> constrained children -> backfill -> graph).
+    """Three-arm recall pipeline (parent-constrained children, global backfill,
+    graph parameter recall) fused by one magnitude-preserving scoring pass.
     """
 
     def __init__(
@@ -98,10 +104,10 @@ class HierarchicalRetriever:
                 parent_top_n=cfg.parent_top_n,
                 child_per_parent=cfg.child_per_parent,
                 backfill_children=cfg.backfill_children,
-                graph_boost=cfg.graph_boost,
+                graph_recall=cfg.graph_recall,
                 parent_score_weight=cfg.parent_score_weight,
+                graph_boost=cfg.graph_boost,
                 hybrid_alpha=_default_alpha(),
-                rrf_k=cfg.rrf_k,
                 max_per_source=cfg.max_per_source,
             )
         self.config = cfg
@@ -115,9 +121,9 @@ class HierarchicalRetriever:
         source_kinds: tuple[str, ...] | None = None,
         matched_parameter_scores: dict[str, float] | None = None,
     ) -> list[RetrievedChunk]:
-        """Run the full four-step recall and return the top 'limit' chunks after RRF fusion.
-        """
-        # 1. Parent recall (hybrid: BM25 catches unique header tokens).
+        """Run the three recall arms and fuse them in one scoring pass: each
+        chunk's own normalised hybrid score plus parent/graph membership boosts."""
+        # Arm 1. Parent recall (hybrid: BM25 catches unique header tokens).
         parent_hits = self.vector_store.hybrid_sections(
             query=question,
             vector=question_vector,
@@ -127,7 +133,7 @@ class HierarchicalRetriever:
         )
         parent_score: dict[str, float] = {p.section_id: float(p.score) for p in parent_hits}
 
-        # 2. Children filtered to the recalled parents.
+        # Arm 1 (cont). Children filtered to the recalled parents.
         constrained_children: list[ChunkHit] = []
         if parent_hits:
             constrained_children = self.vector_store.hybrid_chunks(
@@ -139,7 +145,7 @@ class HierarchicalRetriever:
                 source_kinds=source_kinds,
             )
 
-        # 3. Unconstrained backfill — catches strong chunks in weak parents.
+        # Arm 2. Unconstrained backfill — catches strong chunks in weak parents.
         backfill = self.vector_store.hybrid_chunks(
             query=question,
             vector=question_vector,
@@ -148,73 +154,52 @@ class HierarchicalRetriever:
             source_kinds=source_kinds,
         )
 
-        # 4. Graph signal - chunks already carry parameter_ids tags, so we
-        # score against 'expanded' directly without a SPARQL lookup.
-        seeds = set(matched_parameter_ids)
+        # Arm 3. Graph recall — chunks tagged with the matched (+1-hop expanded)
+        # parameters, fetched directly; adds chunks the open search missed.
         expanded = self.knowledge_graph.expand_parameters(matched_parameter_ids) if matched_parameter_ids else set()
-        param_scores = matched_parameter_scores or {}
+        graph_children: list[ChunkHit] = []
+        if expanded:
+            graph_children = self.vector_store.chunks_by_parameters(
+                query=question,
+                vector=question_vector,
+                limit=self.config.graph_recall,
+                alpha=self.config.hybrid_alpha,
+                parameter_ids=tuple(sorted(expanded)),
+                source_kinds=source_kinds,
+            )
 
+        # Merge into one candidate pool, keeping the best raw hybrid score seen.
         pool: dict[str, ChunkHit] = {}
-        for hit in (*constrained_children, *backfill):
+        for hit in (*constrained_children, *backfill, *graph_children):
             cid = hit.chunk.metadata.chunk_id
             if cid not in pool or pool[cid].score < hit.score:
                 pool[cid] = hit
 
-        constrained_ids = [h.chunk.metadata.chunk_id for h in constrained_children]
-        backfill_ids = [h.chunk.metadata.chunk_id for h in backfill]
+        # Single magnitude-preserving scoring pass over the pool.
+        n_constrained = _minmax(constrained_children)
+        n_backfill = _minmax(backfill)
+        n_graph = _minmax(graph_children)
+        n_parent = _minmax_values(parent_score)
 
-        # Parent-projected ranking: pool chunks ordered by their parent's
-        # hybrid score (chunks whose parent didn't make top_n are excluded).
-        parent_projected_ids = [
-            cid
-            for cid, _hit in sorted(
-                pool.items(),
-                key=lambda kv: parent_score.get(kv[1].chunk.metadata.parent_id or "", 0.0),
-                reverse=True,
-            )
-            if (pool[cid].chunk.metadata.parent_id or "") in parent_score
-        ]
-
-        # Graph ranking: weighted sum (seeds full, neighbors discounted).
-        # Chunks with zero graph score are excluded so missing matches don't
-        # pollute the ranking.
-        def _graph_score(hit: ChunkHit) -> float:
-            """Per-chunk score from the matched-parameter graph signal.
-            """
-            if not expanded:
-                return 0.0
-            return sum(
-                param_scores.get(pid, 0.0) * (1.0 if pid in seeds else _NEIGHBOR_DISCOUNT)
-                for pid in hit.chunk.metadata.parameter_ids
-                if pid in expanded
-            )
-
-        graph_scored = [(cid, _graph_score(hit)) for cid, hit in pool.items()]
-        graph_ranked_ids = [
-            cid
-            for cid, gs in sorted(graph_scored, key=lambda kv: kv[1], reverse=True)
-            if gs > 0
-        ]
-
-        rrf_score = _rrf_combine(
-            [constrained_ids, backfill_ids, parent_projected_ids, graph_ranked_ids],
-            k=self.config.rrf_k,
-        )
-
-        # Build full sorted list first so _diverse_topk has visibility for
-        # overflow backfill.
-        ordered_ids = sorted(rrf_score, key=lambda c: rrf_score[c], reverse=True)
         ranked: list[RetrievedChunk] = []
-        for cid in ordered_ids:
-            hit = pool[cid]
-            parent_id = hit.chunk.metadata.parent_id
+        for cid, hit in pool.items():
+            # Base relevance: the chunk's strongest normalised hybrid score
+            # across the arms that surfaced it (magnitude, not rank).
+            base = max(n_constrained.get(cid, 0.0), n_backfill.get(cid, 0.0), n_graph.get(cid, 0.0))
+            parent_id = hit.chunk.metadata.parent_id or ""
+            parent_norm = n_parent.get(parent_id, 0.0)
+            score = base
+            score += self.config.parent_score_weight * parent_norm
+            score += self.config.graph_boost * n_graph.get(cid, 0.0)
             ranked.append(
                 RetrievedChunk(
                     chunk=hit.chunk,
-                    score=rrf_score[cid],
-                    parent_score=parent_score.get(parent_id, 0.0) if parent_id and parent_id in parent_score else None,
+                    score=score,
+                    parent_score=parent_score.get(parent_id) if parent_id in parent_score else None,
                 )
             )
+
+        ranked.sort(key=lambda r: r.score, reverse=True)
         return _diverse_topk(ranked, limit, self.config.max_per_source)
 
     def parent_hits(
