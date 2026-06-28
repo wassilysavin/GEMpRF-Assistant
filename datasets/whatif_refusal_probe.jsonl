@@ -1,0 +1,20 @@
+{"id": "wrp01", "param": "search_space.nDCT.value", "question": "What would happen if I increased nDCT to 10?"}
+{"id": "wrp02", "param": "search_space.nDCT.value", "question": "If I set nDCT to 7, what changes downstream?"}
+{"id": "wrp03", "param": "search_space.nDCT.value", "question": "Suppose I bump nDCT from 1 to 12 — what is the effect?"}
+{"id": "wrp04", "param": "measured_data.batches", "question": "What happens if I increase batches to 64?"}
+{"id": "wrp05", "param": "measured_data.batches", "question": "If I set batches very high, how does per-batch size change?"}
+{"id": "wrp06", "param": "search_space.default_spatial_grid.num_horizontal_prfs", "question": "What would happen if I raised num_horizontal_prfs to 201?"}
+{"id": "wrp07", "param": "search_space.default_sigmas.num_sigmas", "question": "If I increase num_sigmas to 32, what is the effect on the search?"}
+{"id": "wrp08", "param": "search_space.default_spatial_grid.num_vertical_prfs", "question": "Suppose I double num_vertical_prfs — what changes?"}
+{"id": "wrp09", "param": "refine_fitting.enable", "question": "What would happen if I turned refine fitting on?"}
+{"id": "wrp10", "param": "refine_fitting.enable", "question": "If I enable refine fitting, what changes in the fit?"}
+{"id": "wrp11", "param": "refine_fitting.refinefit_on_gpu", "question": "What happens if I set refinefit_on_gpu to True but leave refine fitting off?"}
+{"id": "wrp12", "param": "stimulus.high_temporal_resolution.num_frames_downsampled", "question": "What would happen if I set num_frames_downsampled higher than my stimulus frame count?"}
+{"id": "wrp13", "param": "stimulus.high_temporal_resolution.slice_time_ref", "question": "If high temporal resolution is disabled, what happens to slice_time_ref?"}
+{"id": "wrp14", "param": "stimulus.binarization.threshold", "question": "What would happen if I lowered the binarization threshold to 0?"}
+{"id": "wrp15", "param": "stimulus.binarization.threshold", "question": "If binarization is disabled, does the threshold still do anything?"}
+{"id": "wrp16", "param": "stimulus.visual_field", "question": "What happens if my stimulus visual_field differs from the search-space visual_field_radius?"}
+{"id": "wrp17", "param": "search_space.default_hrf", "question": "What would happen if I enabled Use HRF from File?"}
+{"id": "wrp18", "param": "search_space.default_spatial_grid.num_horizontal_prfs", "question": "If I crank num_horizontal_prfs, num_vertical_prfs and num_sigmas all up, what is the combined effect?"}
+{"id": "wrp19", "param": "search_space.nDCT.value", "question": "Is setting nDCT to 20 a problem?"}
+{"id": "wrp20", "param": "refine_fitting.enable", "question": "What does enabling refine fitting cost me?"}

@@ -21,6 +21,7 @@ from ..models import (
 )
 from .chunking import ChunkingConfig, split_documents
 from .knowledge_graph import ChunkTriple, KnowledgeGraphStore
+from .parameter_relations import named_param_ids, render_parameter_matrix, render_relation_answer
 from .parameters import ParameterMatcher
 from .prompts import (
     HUMAN_PROMPT,
@@ -254,6 +255,22 @@ class GraphRagEngine:
         evidence = self._select_evidence(first_pass, top_k)
         citations = self._build_citations(evidence, matched_specs)
         if not self._has_supporting_evidence(evidence, rerank_used):
+            # Retrieval found nothing, but a matched parameter may carry corpus-grounded
+            # relations; answer deterministically from those rather than refusing outright.
+            relation_answer = self._relation_fallback(question)
+            if relation_answer is not None:
+                return QueryAnalysis(
+                    question=question,
+                    answer=relation_answer,
+                    status="supported",
+                    matched_parameter_ids=[spec.id for spec in matched_specs],
+                    matched_parameter_labels=[spec.label for spec in matched_specs],
+                    evidence=self._to_evidence_items(evidence),
+                    citations=citations,
+                    used_llm=False,
+                    rerank_used=rerank_used,
+                    rewritten_query=rewritten,
+                )
             return QueryAnalysis(
                 question=question,
                 answer=INSUFFICIENT_EVIDENCE_MESSAGE,
@@ -268,6 +285,12 @@ class GraphRagEngine:
             )
 
         answer, used_llm = self._generate_answer(question, matched_specs, evidence, rewritten)
+        # Refusal-only fallback: if the LLM refused, back off to corpus-grounded relations
+        # rather than perturbing answers it could already ground from retrieval.
+        if answer == INSUFFICIENT_EVIDENCE_MESSAGE:
+            relation_answer = self._relation_fallback(question)
+            if relation_answer is not None:
+                answer, used_llm = relation_answer, False
         return QueryAnalysis(
             question=question,
             answer=answer,
@@ -572,6 +595,17 @@ class GraphRagEngine:
             f"[{r.chunk.metadata.source_id} {' > '.join(r.chunk.metadata.heading_path)}] {r.chunk.text}"
             for r in evidence
         )
+
+    @staticmethod
+    def _relation_fallback(question: str) -> str | None:
+        """Grounded fallback for the refusal paths: target a parameter the question literally
+        names, else fall back to the universal parameter-interaction matrix."""
+        if os.getenv("GEMPRF_ASSISTANT_RELATIONS", "1").strip() == "0":
+            return None
+        named = named_param_ids(question)
+        if named:
+            return render_relation_answer(named, question)
+        return render_parameter_matrix()
 
     @staticmethod
     def _extractive(evidence: list[RetrievedChunk]) -> str:
