@@ -41,9 +41,41 @@ except Exception:  # pragma: no cover
 
 
 _DEFAULT_TOP_K = 6
-_RERANK_POOL_SIZE = 24
+_DEFAULT_RERANK_POOL_SIZE = 12
 _MIN_EVIDENCE_SCORE = 1e-6
 _MAX_CITATIONS = 6
+
+
+def _rerank_pool_size() -> int:
+    """Cross-encoder rerank pool size (env GEMPRF_ASSISTANT_RERANK_POOL, default 12).
+
+    Rerank is the dominant per-answer cost; its latency scales with the pool, so
+    halving 24->12 roughly halves it with no hit@6 change in eval. Read per-call
+    so the env knob applies regardless of import order.
+    """
+    try:
+        return max(1, int(os.getenv("GEMPRF_ASSISTANT_RERANK_POOL", str(_DEFAULT_RERANK_POOL_SIZE))))
+    except ValueError:
+        return _DEFAULT_RERANK_POOL_SIZE
+
+
+def _evidence_char_cap() -> int:
+    """Per-chunk char cap for evidence sent to the LLM (env GEMPRF_ASSISTANT_LLM_EVIDENCE_CHAR_CAP, 0=off).
+
+    Trims LLM-facing chunk text only (not retrieval, rerank, or citations) to cut
+    prefill, the dominant LLM cost. Off by default; validate against eval before raising.
+    """
+    try:
+        return max(0, int(os.getenv("GEMPRF_ASSISTANT_LLM_EVIDENCE_CHAR_CAP", "0")))
+    except ValueError:
+        return 0
+
+
+def _cap_text(text: str, cap: int) -> str:
+    """Truncate text to `cap` chars on a word boundary (cap<=0 or short text -> unchanged)."""
+    if cap <= 0 or len(text) <= cap:
+        return text
+    return text[:cap].rsplit(" ", 1)[0] + " …"
 
 _SUBJECT_PATTERNS = (
     re.compile(r"^\s*what\s+does\s+(.+?)\s+(?:stand\s+for|mean|denote|describe|do)\b", re.IGNORECASE),
@@ -240,17 +272,18 @@ class GraphRagEngine:
         matched_specs = [spec for spec, _ in matched_pairs]
         matched_parameter_scores = {spec.id: float(score) for spec, score in matched_pairs}
 
+        rerank_pool = _rerank_pool_size()
         first_pass = self.retriever.retrieve(
             question=retrieval_query,
             question_vector=question_embedding,
             matched_parameter_ids=[spec.id for spec in matched_specs],
             matched_parameter_scores=matched_parameter_scores,
-            limit=_RERANK_POOL_SIZE,
+            limit=rerank_pool,
         )
 
         rerank_used = False
         if self.reranker is not None and first_pass:
-            first_pass, rerank_used = self.reranker.rerank(retrieval_query, first_pass, top_k=_RERANK_POOL_SIZE)
+            first_pass, rerank_used = self.reranker.rerank(retrieval_query, first_pass, top_k=rerank_pool)
 
         evidence = self._select_evidence(first_pass, top_k)
         citations = self._build_citations(evidence, matched_specs)
@@ -591,8 +624,9 @@ class GraphRagEngine:
         """
         if not evidence:
             return "- none"
+        cap = _evidence_char_cap()
         return "\n\n".join(
-            f"[{r.chunk.metadata.source_id} {' > '.join(r.chunk.metadata.heading_path)}] {r.chunk.text}"
+            f"[{r.chunk.metadata.source_id} {' > '.join(r.chunk.metadata.heading_path)}] {_cap_text(r.chunk.text, cap)}"
             for r in evidence
         )
 
