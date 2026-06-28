@@ -176,6 +176,7 @@ class HierarchicalRetriever:
                 pool[cid] = hit
 
         # Single magnitude-preserving scoring pass over the pool.
+        # Collects the raw hybrid scores, finds lo/hi, and rescales each to [0, 1]
         n_constrained = _minmax(constrained_children)
         n_backfill = _minmax(backfill)
         n_graph = _minmax(graph_children)

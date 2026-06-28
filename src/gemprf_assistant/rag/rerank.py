@@ -63,7 +63,8 @@ class CrossEncoderReranker:
         candidates: Sequence[RetrievedChunk],
         top_k: int | None = None,
     ) -> tuple[list[RetrievedChunk], bool]:
-
+        """ Reorders retrieved chunks by relevance to the question using a cross-encoder model
+        """
         if not candidates:
             return [], False
         if not self.available or self._model is None:

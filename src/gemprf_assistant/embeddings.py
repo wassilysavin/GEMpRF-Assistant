@@ -130,8 +130,6 @@ def build_embedding_backend() -> EmbeddingBackend:
     local_only = not allow_download
     sentence_model = os.getenv(
         "GEMPRF_ASSISTANT_EMBEDDING_MODEL",
-        # Upgraded from all-MiniLM-L6-v2 (2021, 384d): e5-large-v2 lifts dense
-        # recall@6 ~+10pt (subset_balanced 87%->97%). Requires re-ingest (1024d).
         "intfloat/e5-large-v2",
     )
 

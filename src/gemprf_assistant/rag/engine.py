@@ -159,6 +159,9 @@ class GraphRagEngine:
 
         # Optional synthetic-question augmentation for dense recall (stored text
         # unchanged); no-op unless HYPO_QUESTIONS=1.
+        # For each chunk it generates hypothetical questions the chunk
+        # answers and prepends them to the text that gets embedded, 
+        # so the chunk's vector carries question-shaped phrasing. 
         from .augment import augment_texts
         embed_inputs = augment_texts([c.text for c in chunks])
         chunk_vectors = (
