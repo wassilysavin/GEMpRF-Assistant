@@ -46,15 +46,22 @@ QUERY
   cross-encoder rerank  -->  per-source diversity cap  -->  top-k
     |
     v
-  evidence floor?  -- no -->  "INSUFFICIENT_EVIDENCE" message
+  evidence floor?  -- no -->  relation fallback*  (else "INSUFFICIENT_EVIDENCE")
     | yes
     v
   LLM (OpenAI / xAI / Ollama) with system+human prompt
         - answer from evidence or emit INSUFFICIENT_EVIDENCE:
-        - on failure: retry, then extractive fallback (stitch top chunks)
+        - on LLM refusal: relation fallback*  (else "INSUFFICIENT_EVIDENCE")
+        - on LLM error: retry, then extractive fallback (stitch top chunks)
     |
     v
   strip [source.id] brackets  -->  AnswerResult { answer, citations, matched_params }
+
+  * relation fallback (refusal-only): instead of a dead-end refusal, return
+    corpus-grounded parameter relations -- targeted to a parameter the question
+    literally names (lexical match; embedding score does not separate on/off-topic),
+    else a compact universal parameter-interaction matrix. Deterministic, no LLM;
+    toggle via GEMPRF_ASSISTANT_RELATIONS.
 ```
 
 ## Setup
