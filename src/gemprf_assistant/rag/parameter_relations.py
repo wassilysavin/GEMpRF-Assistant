@@ -1,6 +1,3 @@
-"""Corpus-grounded parameter relations: deterministic what-if scaffolding for the prompt."""
-from __future__ import annotations
-
 import re
 from dataclasses import dataclass
 from typing import Callable, Iterable
@@ -181,3 +178,34 @@ PARAMETER_MATRIX = (
 def render_parameter_matrix() -> str:
     """Return the compact universal parameter-interaction reference."""
     return PARAMETER_MATRIX
+
+
+# Corpus-grounded answer for pRF-model capability questions; the local LLM tends to
+# refuse yes/no "is X supported by the pRF model?" forms even with the support chunks
+# retrieved, so this deterministic answer carries the same grounded content.
+MODEL_CAPABILITY_ANSWER = (
+    "GEM-pRF currently implements only the 2D Gaussian pRF model, and it is the only option you can "
+    "select in the Configuration Generator's pRF Model field. The 2D Gaussian describes a single "
+    "isotropic receptive field with a centre position and one size, so that plain centre-and-size case "
+    "is what it supports.\n\n"
+    "Properties the 2D Gaussian does not capture would need a different model:\n"
+    "- A centre-surround receptive field or surround suppression would require the Difference of "
+    "Gaussians (DoG) model, which adds an inhibitory surround via a second Gaussian.\n"
+    "- A compressive or nonlinear (subadditive) response would require the CSS model.\n\n"
+    "Both DoG and CSS appear in the pRF Model dropdown but are marked 'not available at the moment': "
+    "DoG is an unimplemented stub and CSS has no implementation, so neither can currently be selected."
+)
+
+# Capability-specific phrasings that the model-capability answer covers. Kept narrow
+# (this fires only on the refusal path) so it never overrides a legitimate refusal that
+# merely mentions "model" or "gaussian" in passing.
+_MODEL_CAPABILITY_RE = re.compile(
+    r"\b(surround|inhibitory|centre[- ]surround|center[- ]surround|difference[ -]of[ -]gaussian|dog|"
+    r"css|compressive|non[- ]?linear|subadditive|isotropic|anisotropic|second gaussian|"
+    r"which (?:pr?f )?model|what (?:pr?f )?model|pr?f model|model type)\b"
+)
+
+
+def model_capability_question(question: str) -> bool:
+    """True when the question asks what a GEM-pRF pRF model can or cannot represent."""
+    return bool(_MODEL_CAPABILITY_RE.search(question.lower()))

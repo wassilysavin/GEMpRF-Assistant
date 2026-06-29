@@ -1,3 +1,4 @@
+import threading
 import urllib.parse
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,6 +16,9 @@ PARAM = Namespace("https://gemprf.local/parameter/")
 SRC = Namespace("https://gemprf.local/source/")
 CHUNK = Namespace("https://gemprf.local/chunk/")
 SECTION = Namespace("https://gemprf.local/section/")
+
+# rdflib's SPARQL parser uses pyparsing global state that races under threads; serialize query parsing.
+_SPARQL_LOCK = threading.Lock()
 
 
 def _slug(text: str) -> str:
@@ -169,7 +173,9 @@ class KnowledgeGraphStore:
             }}
         """
         expanded = set(seeds)
-        for row in self.graph.query(query):
+        with _SPARQL_LOCK:
+            rows = list(self.graph.query(query))
+        for row in rows:
             expanded.add(_strip_uri(str(row.related)))
         return expanded
 
@@ -189,7 +195,9 @@ class KnowledgeGraphStore:
               FILTER (?parameter IN ({bindings}))
             }}
         """
-        return {_strip_uri(str(row.chunk)) for row in self.graph.query(query)}
+        with _SPARQL_LOCK:
+            rows = list(self.graph.query(query))
+        return {_strip_uri(str(row.chunk)) for row in rows}
 
 
 def _strip_uri(uri: str) -> str:

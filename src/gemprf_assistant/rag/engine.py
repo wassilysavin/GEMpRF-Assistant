@@ -21,7 +21,13 @@ from ..models import (
 )
 from .chunking import ChunkingConfig, split_documents
 from .knowledge_graph import ChunkTriple, KnowledgeGraphStore
-from .parameter_relations import named_param_ids, render_parameter_matrix, render_relation_answer
+from .parameter_relations import (
+    MODEL_CAPABILITY_ANSWER,
+    model_capability_question,
+    named_param_ids,
+    render_parameter_matrix,
+    render_relation_answer,
+)
 from .parameters import ParameterMatcher
 from .prompts import (
     HUMAN_PROMPT,
@@ -636,6 +642,8 @@ class GraphRagEngine:
         names, else fall back to the universal parameter-interaction matrix."""
         if os.getenv("GEMPRF_ASSISTANT_RELATIONS", "1").strip() == "0":
             return None
+        if model_capability_question(question):
+            return MODEL_CAPABILITY_ANSWER
         named = named_param_ids(question)
         if named:
             return render_relation_answer(named, question)

@@ -966,6 +966,46 @@ MANUAL_DOCUMENTS: tuple[Document, ...] = (
         ),
         metadata={"source_id": "website.config_generator"},
     ),
+    Document(
+        page_content=(
+            "Which pRF models GEM-pRF supports, and which you can select. GEM-pRF currently implements only the 2D "
+            "Gaussian model, and it is the only value the runtime accepts and the only option the Configuration "
+            "Generator's pRF Model field can actually select. Difference of Gaussians (DoG) and CSS also appear in "
+            "the pRF Model dropdown and in the model enum, but both are marked 'not available at the moment': DoG "
+            "is an unimplemented stub and CSS has no implementation, so neither can currently be selected. Use this "
+            "rule for 'is X supported by the pRF model?' questions: the plain case of a single round receptive "
+            "field with a centre and one size is supported by the 2D Gaussian; any property the 2D Gaussian lacks "
+            "is not supported today and would require the alternative DoG or CSS models, which are listed in the "
+            "configurator but not yet available to select."
+        ),
+        metadata={"source_id": "website.config_generator"},
+    ),
+    Document(
+        page_content=(
+            "Surround suppression and centre–surround receptive fields in GEM-pRF. The 2D Gaussian model that "
+            "GEM-pRF currently provides represents only a single isotropic excitatory centre with coordinates "
+            "(μx, μy) and one size σ; it has no surround term. An inhibitory surround, a centre–surround profile, "
+            "or surround suppression is therefore NOT supported by the 2D Gaussian model in GEM-pRF. Modelling a "
+            "surround would instead require a Difference of Gaussians (DoG) model (Zuiderbaan et al., 2012), which "
+            "subtracts a second, wider Gaussian to add an inhibitory surround around the excitatory centre. The "
+            "GEM-pRF paper names DoG as a possible future addition and the package already ships abstract base "
+            "classes for new pRF models, but the DoG class is an unimplemented stub and the configurator lists DoG "
+            "as not available, so it cannot currently be selected."
+        ),
+        metadata={"source_id": "website.config_generator"},
+    ),
+    Document(
+        page_content=(
+            "Nonlinear or compressive spatial summation in GEM-pRF. The 2D Gaussian model that GEM-pRF currently "
+            "provides has a single isotropic size σ and no compressive exponent, so a compressive or nonlinear "
+            "(subadditive) spatial-summation response is NOT supported by the 2D Gaussian model in GEM-pRF. The "
+            "configurator lists a CSS option in the pRF Model dropdown alongside DoG as the kind of alternative "
+            "model that would be needed for such a response, but neither the GEM-pRF paper nor the package code "
+            "defines or implements what CSS computes, and like DoG it is marked not available and cannot be "
+            "selected."
+        ),
+        metadata={"source_id": "website.config_generator"},
+    ),
 )
 
 PARAMETERS: tuple[ParameterSpec, ...] = (
