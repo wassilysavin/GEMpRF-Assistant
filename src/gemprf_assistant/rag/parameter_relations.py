@@ -40,7 +40,42 @@ RELATIONS: tuple[Relation, ...] = (
          "search_space.default_sigmas.num_sigmas"), "scales",
         "The coarse-fit candidate grid size is the product "
         "(num_horizontal_prfs x num_vertical_prfs x num_sigmas); increasing any of "
-        "these increases compute and memory demands.",
+        "these increases compute and memory demands. Coarse fitting holds all "
+        "prediction time courses in GPU memory at once, so the whole product must "
+        "fit; the paper's remedy when it does not is to reduce sampling density "
+        "(fewer grid points), not to trade one knob for another.",
+        "website.config_generator",
+    ),
+    Relation(
+        ("search_space.default_spatial_grid.num_horizontal_prfs",
+         "search_space.default_spatial_grid.num_vertical_prfs",
+         "search_space.default_spatial_grid.visual_field_radius"), "scales",
+        "Candidate pRF centres are np.linspace(-visual_field_radius, "
+        "+visual_field_radius) with num_horizontal_prfs points on x and "
+        "num_vertical_prfs on y, so the spacing between adjacent centres is "
+        "2 * visual_field_radius / (num_horizontal_prfs - 1) (and likewise for y). "
+        "At a fixed radius, adding pRFs makes the grid finer; at a fixed pRF count, "
+        "a larger radius spreads the same points wider (coarser), so reach and "
+        "resolution trade off unless both are raised together.",
+        "website.config_generator",
+    ),
+    Relation(
+        ("search_space.default_spatial_grid.num_horizontal_prfs",
+         "search_space.default_spatial_grid.num_vertical_prfs",
+         "search_space.default_spatial_grid.visual_field_radius"), "constrain",
+        "Centres outside the disc x^2 + y^2 < visual_field_radius^2 are discarded "
+        "before fitting, so the usable candidate count is smaller than "
+        "(num_horizontal_prfs x num_vertical_prfs) and shrinks as visual_field_radius "
+        "tightens relative to the grid span.",
+        "website.config_generator",
+    ),
+    Relation(
+        ("search_space.default_sigmas.num_sigmas",), "scales",
+        "Candidate pRF sizes are np.linspace(min_sigma, max_sigma, num_sigmas) "
+        "(num_sigmas equally-spaced values, endpoints included), so the sigma "
+        "spacing is (max_sigma - min_sigma) / (num_sigmas - 1); widening the "
+        "[min_sigma, max_sigma] range at a fixed num_sigmas coarsens size sampling, "
+        "while adding sigmas refines it.",
         "website.config_generator",
     ),
     Relation(
@@ -133,7 +168,7 @@ _TRIGGERS: dict[str, tuple[str, ...]] = {
     "measured_data.batches": ("batch",),
     "search_space.default_spatial_grid.num_horizontal_prfs": ("num_horizontal_prfs", "horizontal prf"),
     "search_space.default_spatial_grid.num_vertical_prfs": ("num_vertical_prfs", "vertical prf"),
-    "search_space.default_sigmas.num_sigmas": ("num_sigmas", "sigma"),
+    "search_space.default_sigmas.num_sigmas": ("num_sigmas", "sigma", "min_sigma", "max_sigma"),
     "search_space.default_spatial_grid.visual_field_radius": ("visual_field_radius", "visual field radius"),
     "stimulus.visual_field": ("visual_field", "visual field"),
     "refine_fitting.enable": ("refine fitting", "refine_fitting", "refine fit"),
@@ -174,16 +209,32 @@ def named_param_ids(question: str) -> list[str]:
 # shown as a general reference when a refusal can't be targeted to one parameter.
 PARAMETER_MATRIX = (
     "I can't ground a specific answer to that, but here is how the main GEM-pRF "
-    "parameters relate (general reference from the docs):\n\n"
-    "Size & cost\n"
-    "- Grid candidates = num_horizontal_prfs x num_vertical_prfs x num_sigmas; raising any "
-    "of them increases compute and memory demands (sample grid 51 x 51 x 8).\n"
-    "- nDCT generates (2 * nDCT + 1) cosine drift regressors, stacked as nuisance columns "
-    "(sample nDCT 1, giving 3).\n"
-    "- Batches set the per-batch size = max(1, total_y_signals / batches).\n\n"
+    "parameters relate to each other (general reference from the docs):\n\n"
+    "Coarse-fit grid (extent and count jointly set resolution)\n"
+    "- Candidate centres = np.linspace(-visual_field_radius, +visual_field_radius) with "
+    "num_horizontal_prfs points on x and num_vertical_prfs on y, so adjacent-centre spacing "
+    "= 2 * visual_field_radius / (num_horizontal_prfs - 1). At a fixed radius, more pRFs -> "
+    "finer grid; at a fixed pRF count, a larger radius spreads the same points wider "
+    "(coarser) -- reach and resolution trade off unless both rise together (sample 51 x 51, "
+    "radius 12).\n"
+    "- Candidate sizes = np.linspace(min_sigma, max_sigma, num_sigmas), so sigma spacing = "
+    "(max_sigma - min_sigma) / (num_sigmas - 1). Widening [min_sigma, max_sigma] at fixed "
+    "num_sigmas coarsens size sampling; adding sigmas refines it (sample 8 over 0.5..5).\n"
+    "- Centres outside the disc x^2 + y^2 < visual_field_radius^2 are dropped, so usable "
+    "candidates are fewer than the raw num_horizontal_prfs x num_vertical_prfs and shrink as "
+    "the radius tightens relative to the grid span.\n\n"
+    "Size, cost & memory (the whole product moves together)\n"
+    "- Total candidates searched = num_horizontal_prfs x num_vertical_prfs x num_sigmas; "
+    "raising any one multiplies the grid and its compute and memory. Coarse fitting holds "
+    "all prediction time courses in GPU memory at once, so the full product must fit; the "
+    "documented remedy on overflow is to reduce sampling density, not to lower a single knob.\n"
+    "- nDCT generates (2 * nDCT + 1) cosine drift regressors stacked as nuisance columns, so "
+    "more nDCT -> more design-matrix columns (sample nDCT 1, giving 3).\n"
+    "- batches sets per-batch size = max(1, total_y_signals / batches): more batches -> "
+    "smaller batches (lower peak memory), fewer -> larger.\n\n"
     "Toggles (act only when enabled)\n"
     "- Refine fitting runs per-voxel quadratic refinement (adds compute and memory) and "
-    "gates refinefit_on_gpu.\n"
+    "gates refinefit_on_gpu, which has no effect while refine fitting is off.\n"
     "- High temporal resolution gates num_frames_downsampled and slice_time_ref (both "
     "ignored when off).\n"
     "- Binarization sets stimulus values above the threshold to 1 (threshold ignored when off).\n\n"
