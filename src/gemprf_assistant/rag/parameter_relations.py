@@ -145,22 +145,28 @@ _TRIGGERS: dict[str, tuple[str, ...]] = {
 }
 
 
-def _term_in(q_lower: str, term: str) -> bool:
-    """Separator-tolerant substring test: spaces and underscores are interchangeable."""
-    if not term or len(term) < 3:
-        return False
-    t = term.lower()
-    return t in q_lower or t.replace("_", " ") in q_lower or t.replace(" ", "_") in q_lower
+def _keyword_re(keyword: str) -> re.Pattern:
+    """Compile a keyword so spaces/hyphens/underscores may split it (e.g. "N dct" matches
+    "ndct"), anchored at a leading word boundary so it can't glue onto an adjacent word."""
+    chars = re.sub(r"[\s_-]+", "", keyword.lower())
+    return re.compile(r"\b" + r"[\s_-]*".join(re.escape(c) for c in chars), re.IGNORECASE)
+
+
+_TRIGGER_RES: dict[str, tuple[re.Pattern, ...]] = {
+    pid: tuple(_keyword_re(kw) for kw in kws) for pid, kws in _TRIGGERS.items()
+}
 
 
 def question_names_param(question: str, pid: str, extra_terms: Iterable[str] = ()) -> bool:
-    """True if the question literally names this param via a curated trigger or an extra term."""
-    q = question.lower()
-    return any(_term_in(q, term) for term in (*_TRIGGERS.get(pid, ()), *extra_terms))
+    """True if the question literally names this param via a curated trigger or an extra term,
+    tolerant to spaces/hyphens/underscores that split a keyword (e.g. "N dct" matches nDCT)."""
+    patterns = (*_TRIGGER_RES.get(pid, ()), *(_keyword_re(t) for t in extra_terms if t and len(t) >= 3))
+    return any(r.search(question) for r in patterns)
 
 
 def named_param_ids(question: str) -> list[str]:
-    """Covered parameter ids whose distinctive keyword literally appears in the question."""
+    """Covered parameter ids whose distinctive keyword appears in the question, tolerant
+    to spaces/hyphens/underscores that split a keyword (e.g. "N dct" matches nDCT)."""
     return [pid for pid in _TRIGGERS if question_names_param(question, pid)]
 
 
