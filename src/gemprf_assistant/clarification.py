@@ -107,7 +107,7 @@ def answer_with_clarification(
     output_fn: Callable[[str], None] = print,
     max_rounds: Optional[int] = None,
 ) -> QueryAnalysis:
-    """Answer a question; if ungrounded, walk the aspect checklist (one question/round, folding replies), re-analyze once, and return the final QueryAnalysis (out-of-scope refuses without asking)."""
+    """Answer a question; if ungrounded, walk the aspect checklist (one question/round, folding replies), re-analyzing after each reply and stopping as soon as it grounds (out-of-scope refuses without asking)."""
     if max_rounds is None:
         max_rounds = _default_max_rounds()
     analysis = engine.analyze(question)
@@ -137,7 +137,10 @@ def answer_with_clarification(
             break
         asked.append((clarifying, reply))
         replies.append(reply)
+        # Re-ground after each reply and stop early once the folded context is answerable,
+        # rather than always exhausting the aspect checklist.
+        analysis = engine.analyze(" ".join([question, *replies]))
+        if not is_unanswered(analysis):
+            return analysis
 
-    if not replies:
-        return analysis
-    return engine.analyze(" ".join([question, *replies]))
+    return analysis
