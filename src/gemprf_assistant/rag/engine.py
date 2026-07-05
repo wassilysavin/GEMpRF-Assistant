@@ -42,10 +42,7 @@ from .rerank import CrossEncoderReranker, build_reranker
 from .retrieval import HierarchicalRetriever, RetrievalConfig
 from .vector_store import WeaviateHierarchicalStore
 
-try:
-    from langchain_openai import ChatOpenAI
-except Exception:  # pragma: no cover
-    ChatOpenAI = None
+from ..llm import build_chat_llm
 
 
 _DEFAULT_TOP_K = 6
@@ -463,32 +460,7 @@ class GraphRagEngine:
         return citations
 
     def _build_llm(self):
-        if ChatOpenAI is None:
-            return None
-        provider = os.getenv("GEMPRF_ASSISTANT_LLM_PROVIDER", "").strip().lower()
-        has_openai = bool(os.getenv("OPENAI_API_KEY"))
-        has_xai = bool(os.getenv("XAI_API_KEY"))
-
-        if provider == "ollama" or (not provider and not has_openai and not has_xai):
-            return ChatOpenAI(
-                model=os.getenv("GEMPRF_ASSISTANT_OLLAMA_MODEL", "mistral-nemo:12b"),
-                api_key=os.getenv("GEMPRF_ASSISTANT_OLLAMA_API_KEY", "ollama"),
-                base_url=os.getenv("GEMPRF_ASSISTANT_OLLAMA_BASE_URL", "http://localhost:11434/v1"),
-                temperature=0,
-                max_tokens=int(os.getenv("GEMPRF_ASSISTANT_OLLAMA_MAX_TOKENS", "768")),
-            )
-        if provider == "xai" or (not provider and has_xai and not has_openai):
-            if not has_xai:
-                return None
-            return ChatOpenAI(
-                model=os.getenv("GEMPRF_ASSISTANT_XAI_MODEL", "grok-4.20-reasoning"),
-                api_key=os.getenv("XAI_API_KEY"),
-                base_url=os.getenv("GEMPRF_ASSISTANT_XAI_BASE_URL", "https://api.x.ai/v1"),
-                temperature=0,
-            )
-        if not has_openai:
-            return None
-        return ChatOpenAI(model=os.getenv("GEMPRF_ASSISTANT_MODEL", "gpt-4o-mini"), temperature=0)
+        return build_chat_llm(temperature=0)
 
     @staticmethod
     def _extract_subject(question: str) -> str | None:
