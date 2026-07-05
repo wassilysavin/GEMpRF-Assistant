@@ -23,8 +23,10 @@ from .chunking import ChunkingConfig, split_documents
 from .knowledge_graph import ChunkTriple, KnowledgeGraphStore
 from .parameter_relations import (
     MODEL_CAPABILITY_ANSWER,
+    covered_param_ids,
     model_capability_question,
     named_param_ids,
+    question_names_param,
     render_parameter_matrix,
     render_relation_answer,
 )
@@ -50,6 +52,8 @@ _DEFAULT_TOP_K = 6
 _DEFAULT_RERANK_POOL_SIZE = 12
 _MIN_EVIDENCE_SCORE = 1e-6
 _MAX_CITATIONS = 6
+# Min cosine for targeting the refusal fallback by embedding match; keeps off-topic refusals on the matrix.
+_RELATION_FALLBACK_MIN_SCORE = 0.6
 
 
 def _rerank_pool_size() -> int:
@@ -91,12 +95,15 @@ _SUBJECT_PATTERNS = (
     re.compile(r"^\s*(?:define|explain|describe)\s+(.+?)(?:\s+(?:in|for|of|on|at)\b|$)", re.IGNORECASE),
 )
 
-# Tokens specific enough that bare retrieval beats HyDE expansion.
+# Tokens specific enough that bare retrieval beats LLM query expansion.
 _RARE_ANCHOR_PATTERNS = (
     re.compile(r"\([^)]+\)"),                                # parenthesised: C(θ)
     re.compile(r"[θΘα-ωΑ-Ω∇∑∫]"),                            # Greek / math
     re.compile(r"\b[A-Za-z]{2,}-[A-Za-z]{2,}\b"),            # hyphenated: GEM-pRF
     re.compile(r"\b\w*[a-z][A-Z]\w*\b"),                     # mixed-case: pRF
+    re.compile(r"\b\w+_\w+\b"),                              # snake_case identifier: measured_data
+    re.compile(r"\b[A-Za-z_]\w*\.\w+"),                      # dotted attribute/path: cfg.measured_data
+    re.compile(r"\[\s*['\"]"),                               # subscript access: cfg[...]["batches"]
 )
 
 
@@ -296,7 +303,7 @@ class GraphRagEngine:
         if not self._has_supporting_evidence(evidence, rerank_used):
             # Retrieval found nothing, but a matched parameter may carry corpus-grounded
             # relations; answer deterministically from those rather than refusing outright.
-            relation_answer = self._relation_fallback(question)
+            relation_answer = self._relation_fallback(question, matched_specs, matched_parameter_scores)
             if relation_answer is not None:
                 return QueryAnalysis(
                     question=question,
@@ -327,7 +334,7 @@ class GraphRagEngine:
         # Refusal-only fallback: if the LLM refused, back off to corpus-grounded relations
         # rather than perturbing answers it could already ground from retrieval.
         if answer == INSUFFICIENT_EVIDENCE_MESSAGE:
-            relation_answer = self._relation_fallback(question)
+            relation_answer = self._relation_fallback(question, matched_specs, matched_parameter_scores)
             if relation_answer is not None:
                 answer, used_llm = relation_answer, False
         return QueryAnalysis(
@@ -495,7 +502,7 @@ class GraphRagEngine:
         return None
 
     def _subject_has_rare_anchor(self, subject: str) -> bool:
-        """True if 'subject' carries a token specific enough that HyDE expansion would dilute retrieval.
+        """True if 'subject' carries a token specific enough that LLM query expansion would dilute retrieval.
         """
         for pattern in _RARE_ANCHOR_PATTERNS:
             if pattern.search(subject):
@@ -541,6 +548,10 @@ class GraphRagEngine:
         if os.getenv("GEMPRF_ASSISTANT_QUERY_REWRITE", "1").strip() == "0":
             return None
         if self.llm is None:
+            return None
+        # Rare-anchor gate: a code identifier already retrieves well, so skip expansion that dilutes it.
+        subject = self._extract_subject(question) or question
+        if self._subject_has_rare_anchor(subject):
             return None
         try:
             prompt = ChatPromptTemplate.from_messages(
@@ -637,9 +648,13 @@ class GraphRagEngine:
         )
 
     @staticmethod
-    def _relation_fallback(question: str) -> str | None:
-        """Grounded fallback for the refusal paths: target a parameter the question literally
-        names, else fall back to the universal parameter-interaction matrix."""
+    def _relation_fallback(
+        question: str,
+        matched_specs: list[ParameterSpec] | None = None,
+        matched_scores: dict[str, float] | None = None,
+    ) -> str | None:
+        """Grounded fallback for the refusal paths: target the parameter the question names or
+        confidently matches, else fall back to the universal parameter-interaction matrix."""
         if os.getenv("GEMPRF_ASSISTANT_RELATIONS", "1").strip() == "0":
             return None
         if model_capability_question(question):
@@ -647,6 +662,20 @@ class GraphRagEngine:
         named = named_param_ids(question)
         if named:
             return render_relation_answer(named, question)
+        # No curated trigger (e.g. bare "measured_data"): target the top embedding match when it is a
+        # confident, relation-covered hit the question literally names, else the matrix (guards off-topic ~0.7).
+        specs = matched_specs or []
+        scores = matched_scores or {}
+        if specs:
+            top = specs[0]
+            if (
+                top.id in covered_param_ids()
+                and scores.get(top.id, 0.0) >= _RELATION_FALLBACK_MIN_SCORE
+                and question_names_param(question, top.id, (top.label, *top.aliases, top.id.split(".")[0]))
+            ):
+                answer = render_relation_answer([top.id], question)
+                if answer:
+                    return answer
         return render_parameter_matrix()
 
     @staticmethod
