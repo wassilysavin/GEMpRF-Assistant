@@ -34,26 +34,39 @@ def _source_kind(source_id: str) -> str:
     return _SOURCE_TYPE_TAG.get(source_id.split(".", 1)[0], "source")
 
 
-def _print_result(result) -> None:
-    print(result.answer)
-    if result.matched_parameters:
+def _print_citations(citations) -> None:
+    if not citations:
+        return
+    print("\nSources used:")
+    seen: set[str] = set()
+    for citation in citations:
+        if citation.id in seen:
+            continue
+        seen.add(citation.id)
+        heading = " > ".join(citation.heading_path) if citation.heading_path else ""
+        title = citation.title or citation.id
+        tag = _source_kind(citation.id)
+        line = f"  - {title} ({tag})"
+        if heading and heading.lower() != title.lower():
+            line += f" — {heading}"
+        print(line)
+
+
+def _print_analysis_result(analysis) -> None:
+    """Print a QueryAnalysis (answer + matched params + sources)."""
+    print(analysis.answer)
+    if analysis.matched_parameter_labels:
         print("\nMatched parameters:")
-        for parameter in result.matched_parameters:
-            print(f"  - {parameter}")
-    if result.citations:
-        print("\nSources used:")
-        seen: set[str] = set()
-        for citation in result.citations:
-            if citation.id in seen:
-                continue
-            seen.add(citation.id)
-            heading = " > ".join(citation.heading_path) if citation.heading_path else ""
-            title = citation.title or citation.id
-            tag = _source_kind(citation.id)
-            line = f"  - {title} ({tag})"
-            if heading and heading.lower() != title.lower():
-                line += f" — {heading}"
-            print(line)
+        for label in analysis.matched_parameter_labels:
+            print(f"  - {label}")
+    _print_citations(analysis.citations)
+
+
+def _answer_question(engine, question: str) -> None:
+    """Answer one question; the clarifier asks follow-ups when it can't ground it, and stops on its own if no reply is available (EOF)."""
+    from .clarification import answer_with_clarification
+
+    _print_analysis_result(answer_with_clarification(engine, question))
 
 
 def _print_analysis(analysis) -> None:
@@ -76,7 +89,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="GEM-pRF Graph-RAG CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    ask_parser = subparsers.add_parser("ask", help="Ask one question")
+    ask_parser = subparsers.add_parser(
+        "ask", help="Ask a question (asks follow-ups if it can't answer and you're at a terminal)"
+    )
     ask_parser.add_argument("question")
     ask_parser.add_argument("--json", action="store_true")
     ask_parser.add_argument("--top-k", type=int, default=6)
@@ -96,6 +111,7 @@ def main() -> None:
     eval_parser.add_argument("--json", action="store_true")
 
     args = parser.parse_args()
+
     engine = GraphRagEngine()
 
     try:
@@ -103,7 +119,7 @@ def main() -> None:
             if args.json:
                 print(json.dumps(engine.ask_dict(args.question, top_k=args.top_k), indent=2))
             else:
-                _print_result(engine.ask(args.question, top_k=args.top_k))
+                _answer_question(engine, args.question)
             return
 
         if args.command == "debug":
@@ -139,7 +155,7 @@ def main() -> None:
                 break
             if not question or question.lower() in {"exit", "quit"}:
                 break
-            _print_result(engine.ask(question))
+            _answer_question(engine, question)
             print()
     finally:
         engine.close()
@@ -160,7 +176,7 @@ def ask_main() -> None:
         if args.json:
             print(json.dumps(engine.ask_dict(args.question, top_k=args.top_k), indent=2))
         else:
-            _print_result(engine.ask(args.question, top_k=args.top_k))
+            _answer_question(engine, args.question)
     finally:
         engine.close()
 
