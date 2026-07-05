@@ -145,10 +145,23 @@ _TRIGGERS: dict[str, tuple[str, ...]] = {
 }
 
 
+def _term_in(q_lower: str, term: str) -> bool:
+    """Separator-tolerant substring test: spaces and underscores are interchangeable."""
+    if not term or len(term) < 3:
+        return False
+    t = term.lower()
+    return t in q_lower or t.replace("_", " ") in q_lower or t.replace(" ", "_") in q_lower
+
+
+def question_names_param(question: str, pid: str, extra_terms: Iterable[str] = ()) -> bool:
+    """True if the question literally names this param via a curated trigger or an extra term."""
+    q = question.lower()
+    return any(_term_in(q, term) for term in (*_TRIGGERS.get(pid, ()), *extra_terms))
+
+
 def named_param_ids(question: str) -> list[str]:
     """Covered parameter ids whose distinctive keyword literally appears in the question."""
-    q = question.lower()
-    return [pid for pid, kws in _TRIGGERS.items() if any(kw in q for kw in kws)]
+    return [pid for pid in _TRIGGERS if question_names_param(question, pid)]
 
 
 # Compact, universal, corpus-grounded map of how the main parameters relate;
