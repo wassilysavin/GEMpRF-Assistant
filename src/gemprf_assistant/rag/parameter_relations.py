@@ -29,6 +29,14 @@ RELATIONS: tuple[Relation, ...] = (
         "website.config_generator",
     ),
     Relation(
+        ("measured_data.batches",), "definition",
+        "measured_data is the config section holding the observed fMRI signals GEM-pRF "
+        "fits: measured_data_filepath points to one or more NIfTI fMRI runs (iterated by "
+        "the analysis loop), and their Y-signal columns are the total_y_signals the fit "
+        "runs over.",
+        "website.config_generator",
+    ),
+    Relation(
         ("measured_data.batches",), "formula",
         "Per-batch size is computed as max(1, total_y_signals / batches), where "
         "total_y_signals is the number of measured fMRI Y-signal columns.",
@@ -165,7 +173,7 @@ def covered_param_ids() -> set[str]:
 # separate on-topic from off-topic here, but literal naming does).
 _TRIGGERS: dict[str, tuple[str, ...]] = {
     "search_space.nDCT.value": ("ndct",),
-    "measured_data.batches": ("batch",),
+    "measured_data.batches": ("batch", "measured_data", "measured data"),
     "search_space.default_spatial_grid.num_horizontal_prfs": ("num_horizontal_prfs", "horizontal prf"),
     "search_space.default_spatial_grid.num_vertical_prfs": ("num_vertical_prfs", "vertical prf"),
     "search_space.default_sigmas.num_sigmas": ("num_sigmas", "sigma", "min_sigma", "max_sigma"),
