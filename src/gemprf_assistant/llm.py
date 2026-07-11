@@ -16,12 +16,17 @@ def build_chat_llm(temperature: float = 0.0):
     has_xai = bool(os.getenv("XAI_API_KEY"))
 
     if provider == "ollama" or (not provider and not has_openai and not has_xai):
+        # Qwen3 (and other Ollama reasoning models) think by default, wasting ~20x latency on
+        # reasoning the pipeline discards; reasoning_effort=none disables it via the /v1 endpoint.
+        effort = os.getenv("GEMPRF_ASSISTANT_OLLAMA_REASONING_EFFORT", "").strip()
+        extra = {"reasoning_effort": effort} if effort else {}
         return ChatOpenAI(
             model=os.getenv("GEMPRF_ASSISTANT_OLLAMA_MODEL", "mistral-nemo:12b"),
             api_key=os.getenv("GEMPRF_ASSISTANT_OLLAMA_API_KEY", "ollama"),
             base_url=os.getenv("GEMPRF_ASSISTANT_OLLAMA_BASE_URL", "http://localhost:11434/v1"),
             temperature=temperature,
             max_tokens=int(os.getenv("GEMPRF_ASSISTANT_OLLAMA_MAX_TOKENS", "768")),
+            extra_body=extra or None,
         )
     if provider == "xai" or (not provider and has_xai and not has_openai):
         if not has_xai:
