@@ -238,8 +238,8 @@ class GraphRagEngine:
             "sources": len(self.sources),
         }
 
-    def ask(self, question: str, top_k: int = _DEFAULT_TOP_K) -> AnswerResult:
-        analysis = self.analyze(question, top_k=top_k)
+    def ask(self, question: str, top_k: int = _DEFAULT_TOP_K, history=None) -> AnswerResult:
+        analysis = self.analyze(question, top_k=top_k, history=history)
         return AnswerResult(
             answer=analysis.answer,
             status=analysis.status,
@@ -248,8 +248,8 @@ class GraphRagEngine:
             used_llm=analysis.used_llm,
         )
 
-    def ask_dict(self, question: str, top_k: int = _DEFAULT_TOP_K) -> dict:
-        result = self.analyze(question, top_k=top_k)
+    def ask_dict(self, question: str, top_k: int = _DEFAULT_TOP_K, history=None) -> dict:
+        result = self.analyze(question, top_k=top_k, history=history)
         return {
             "answer": result.answer,
             "status": result.status,
@@ -262,8 +262,14 @@ class GraphRagEngine:
             "rewritten_query": result.rewritten_query,
         }
 
-    def analyze(self, question: str, top_k: int = _DEFAULT_TOP_K) -> QueryAnalysis:
-        rewritten = self._hyde_query(question) or self._rewrite_query(question)
+    def analyze(self, question: str, top_k: int = _DEFAULT_TOP_K, history=None) -> QueryAnalysis:
+        # Resolve follow-ups ("it", "that value", "what value in my case?") into a standalone query
+        # against the session history before retrieval; the LLM condense returns it unchanged if
+        # already self-contained.
+        contextual = history.contextualize(question, self.llm) if history else question
+        rewritten = self._hyde_query(contextual) or self._rewrite_query(contextual)
+        if rewritten is None and contextual != question:
+            rewritten = contextual
         retrieval_query = rewritten or question
 
         # Use the query-side embedding (applies the model's query prefix for
@@ -320,7 +326,7 @@ class GraphRagEngine:
                 rewritten_query=rewritten,
             )
 
-        answer, used_llm = self._generate_answer(question, matched_specs, evidence, rewritten)
+        answer, used_llm = self._generate_answer(question, matched_specs, evidence, rewritten, history)
         # Refusal-only fallback: if the LLM refused, back off to corpus-grounded relations
         # rather than perturbing answers it could already ground from retrieval.
         if answer == INSUFFICIENT_EVIDENCE_MESSAGE:
@@ -550,6 +556,7 @@ class GraphRagEngine:
         matched_specs: list[ParameterSpec],
         evidence: list[RetrievedChunk],
         rewritten_query: str | None = None,
+        history=None,
     ) -> tuple[str, bool]:
         if self.llm is not None:
             import time as _time
@@ -557,7 +564,7 @@ class GraphRagEngine:
             last_exc = None
             for i in range(attempts):
                 try:
-                    answer = self._generate_with_llm(question, matched_specs, evidence, rewritten_query)
+                    answer = self._generate_with_llm(question, matched_specs, evidence, rewritten_query, history)
                     if not answer.startswith("INSUFFICIENT_EVIDENCE:"):
                         return _strip_citations(answer), True
                     return INSUFFICIENT_EVIDENCE_MESSAGE, False
@@ -578,11 +585,13 @@ class GraphRagEngine:
         matched_specs: list[ParameterSpec],
         evidence: list[RetrievedChunk],
         rewritten_query: str | None = None,
+        history=None,
     ) -> str:
         prompt = ChatPromptTemplate.from_messages([("system", SYSTEM_PROMPT), ("human", HUMAN_PROMPT)])
         chain = prompt | self.llm
         response = chain.invoke({
             "question": question,
+            "history_context": history.render() if history else "- none",
             "expanded_query_context": rewritten_query or "- none",
             "parameter_context": self._parameter_context(matched_specs),
             "evidence_context": self._evidence_context(evidence),

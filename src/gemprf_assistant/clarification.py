@@ -393,11 +393,12 @@ def answer_with_clarification(
     input_fn: Callable[[str], str] = input,
     output_fn: Callable[[str], None] = print,
     max_rounds: Optional[int] = None,
+    history=None,
 ) -> QueryAnalysis:
-    """Answer a question; if ungrounded, plan question-specific aspects (static checklist as fallback) and walk them (one question/round, folding replies), re-analyzing after each reply and stopping as soon as it grounds (out-of-scope refuses without asking)."""
+    """Answer a question; if ungrounded, plan question-specific aspects (static checklist as fallback) and walk them (one question/round, folding replies), re-analyzing after each reply and stopping as soon as it grounds (out-of-scope refuses without asking). `history` resolves follow-up references across REPL turns."""
     if max_rounds is None:
         max_rounds = _default_max_rounds()
-    analysis = engine.analyze(question)
+    analysis = engine.analyze(question, history=history)
     llm = getattr(engine, "llm", None)
     kind = classify_question(llm, question)  # 'vague' | 'offtopic' | 'ontopic' | '' (gate disabled)
 
@@ -447,7 +448,7 @@ def answer_with_clarification(
         asked.append((clarifying, reply))
         replies.append(reply)
         # Cheap early exit: if the raw fold happens to ground already, take it.
-        analysis = engine.analyze(" ".join([question, *replies]))
+        analysis = engine.analyze(" ".join([question, *replies]), history=history)
         if not is_unanswered(analysis):
             return analysis
 
@@ -459,7 +460,7 @@ def answer_with_clarification(
     if _reformulate_enabled():
         concrete = reformulate_query(llm, question, asked)
         if concrete:
-            reanalyzed = engine.analyze(concrete)
+            reanalyzed = engine.analyze(concrete, history=history)
             if not is_unanswered(reanalyzed):
                 # Only return it if it actually addresses the original question; a drifted answer
                 # (grounded in the wrong corpus region) falls through to the honest mechanism answer.
