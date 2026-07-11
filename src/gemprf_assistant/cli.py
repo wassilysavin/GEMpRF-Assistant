@@ -62,11 +62,13 @@ def _print_analysis_result(analysis) -> None:
     _print_citations(analysis.citations)
 
 
-def _answer_question(engine, question: str) -> None:
+def _answer_question(engine, question: str, history=None):
     """Answer one question; the clarifier asks follow-ups when it can't ground it, and stops on its own if no reply is available (EOF)."""
     from .clarification import answer_with_clarification
 
-    _print_analysis_result(answer_with_clarification(engine, question))
+    analysis = answer_with_clarification(engine, question, history=history)
+    _print_analysis_result(analysis)
+    return analysis
 
 
 def _print_analysis(analysis) -> None:
@@ -146,7 +148,10 @@ def main() -> None:
                 print(format_table(report["aggregate"]))
             return
 
-        # repl
+        # repl: keep a rolling conversation history so follow-ups resolve across turns
+        from .conversation import ConversationHistory, history_enabled
+
+        history = ConversationHistory() if history_enabled() else None
         while True:
             try:
                 question = input("gemprf> ").strip()
@@ -155,7 +160,9 @@ def main() -> None:
                 break
             if not question or question.lower() in {"exit", "quit"}:
                 break
-            _answer_question(engine, question)
+            analysis = _answer_question(engine, question, history)
+            if history is not None:
+                history.add(question, analysis.answer)
             print()
     finally:
         engine.close()

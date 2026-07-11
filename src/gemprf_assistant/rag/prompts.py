@@ -68,11 +68,16 @@ SYSTEM_PROMPT = (
     "that behaviour in plain English without quoting the code itself.\n\n"
     "Do not invent numbers, citations, authors, container names, version IDs, "
     "affiliations, rationales, mechanisms, or explanations that are not present in the "
-    "evidence."
+    "evidence.\n\n"
+    "A CONVERSATION HISTORY block may precede the question. Use it ONLY to resolve what "
+    "the question refers to (e.g. 'it', 'that parameter', a short follow-up). Prior "
+    "answers are NOT evidence: every factual claim must still be grounded in the "
+    "evidence items below, and the refusal rules apply to the resolved question."
 )
 
 
 HUMAN_PROMPT = (
+    "Conversation history (reference resolution only; NOT evidence):\n{history_context}\n\n"
     "Question: {question}\n\n"
     "Expanded query (intent inference; cite from the original question only):\n"
     "{expanded_query_context}\n\n"
