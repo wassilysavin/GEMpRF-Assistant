@@ -62,6 +62,7 @@ class ChatResponse(BaseModel):
     citations: list[dict]
     cached: bool = False
     elapsed_s: float
+    timings: dict | None = None
 
 
 def _build_engine():
@@ -246,10 +247,12 @@ def create_app() -> FastAPI:
             "answer": result.get("answer", ""),
             "status": result.get("status", "unknown"),
             "citations": result.get("citations", []),
+            "timings": result.get("timings"),
         }
+        stage_times = " ".join(f"{k}={v}" for k, v in (body["timings"] or {}).items())
         logger.info(
-            "chat qid=%s status=%s cache=miss elapsed=%.2f queue=%d",
-            qid, body["status"], elapsed, app.state.queue.qsize(),
+            "chat qid=%s status=%s cache=miss elapsed=%.2f queue=%d %s",
+            qid, body["status"], elapsed, app.state.queue.qsize(), stage_times,
         )
         return ChatResponse(**body, cached=False, elapsed_s=elapsed)
 

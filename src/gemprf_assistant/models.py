@@ -106,3 +106,4 @@ class QueryAnalysis:
     used_llm: bool = False
     rerank_used: bool = False
     rewritten_query: str | None = None
+    timings: dict | None = None

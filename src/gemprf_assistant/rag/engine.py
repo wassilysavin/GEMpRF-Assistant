@@ -1,5 +1,6 @@
 import os
 import re
+import time as _clock
 from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Iterable
@@ -267,27 +268,34 @@ class GraphRagEngine:
             "used_llm": result.used_llm,
             "rerank_used": result.rerank_used,
             "rewritten_query": result.rewritten_query,
+            "timings": result.timings,
         }
 
     def analyze(self, question: str, top_k: int = _DEFAULT_TOP_K, history=None) -> QueryAnalysis:
         # Resolve follow-ups ("it", "that value", "what value in my case?") into a standalone query
         # against the session history before retrieval; the LLM condense returns it unchanged if
         # already self-contained.
+        timings: dict[str, float] = {}
+        _t = _clock.perf_counter()
         contextual = history.contextualize(question, self.llm) if history else question
         rewritten = self._hyde_query(contextual) or self._rewrite_query(contextual)
         if rewritten is None and contextual != question:
             rewritten = contextual
         retrieval_query = rewritten or question
+        timings["query_prep_llm"] = round(_clock.perf_counter() - _t, 2)
 
         # Use the query-side embedding (applies the model's query prefix for
         # instruction-tuned embedders like e5; a no-op for plain models).
+        _t = _clock.perf_counter()
         _embed_q = getattr(self.embedding_backend, "embed_query", self.embedding_backend.embed_texts)
         question_embedding = _embed_q([retrieval_query])[0]
 
         matched_pairs = self.parameter_matcher.match_with_scores(question_embedding)
         matched_specs = [spec for spec, _ in matched_pairs]
         matched_parameter_scores = {spec.id: float(score) for spec, score in matched_pairs}
+        timings["embed_match"] = round(_clock.perf_counter() - _t, 2)
 
+        _t = _clock.perf_counter()
         rerank_pool = _rerank_pool_size()
         first_pass = self.retriever.retrieve(
             question=retrieval_query,
@@ -296,10 +304,13 @@ class GraphRagEngine:
             matched_parameter_scores=matched_parameter_scores,
             limit=rerank_pool,
         )
+        timings["retrieve"] = round(_clock.perf_counter() - _t, 2)
 
+        _t = _clock.perf_counter()
         rerank_used = False
         if self.reranker is not None and first_pass:
             first_pass, rerank_used = self.reranker.rerank(retrieval_query, first_pass, top_k=rerank_pool)
+        timings["rerank"] = round(_clock.perf_counter() - _t, 2)
 
         evidence = self._select_evidence(first_pass, top_k)
         citations = self._build_citations(evidence, matched_specs)
@@ -319,6 +330,7 @@ class GraphRagEngine:
                     used_llm=False,
                     rerank_used=rerank_used,
                     rewritten_query=rewritten,
+                    timings=timings,
                 )
             return QueryAnalysis(
                 question=question,
@@ -331,9 +343,12 @@ class GraphRagEngine:
                 used_llm=False,
                 rerank_used=rerank_used,
                 rewritten_query=rewritten,
+                timings=timings,
             )
 
+        _t = _clock.perf_counter()
         answer, used_llm = self._generate_answer(question, matched_specs, evidence, rewritten, history)
+        timings["synthesis_llm"] = round(_clock.perf_counter() - _t, 2)
         # Refusal-only fallback: if the LLM refused, back off to corpus-grounded relations
         # rather than perturbing answers it could already ground from retrieval.
         if answer == INSUFFICIENT_EVIDENCE_MESSAGE:
@@ -351,6 +366,7 @@ class GraphRagEngine:
             used_llm=used_llm,
             rerank_used=rerank_used,
             rewritten_query=rewritten,
+            timings=timings,
         )
 
     def describe(self) -> dict:
