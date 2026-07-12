@@ -115,7 +115,23 @@ CLARIFICATION INTAKE  (wraps analyze() in `ask` and the REPL: when the engine ca
     toggle via GEMPRF_ASSISTANT_RELATIONS.
 ```
 
-## Setup
+## Quickstart
+
+```bash
+git clone --recurse-submodules https://github.com/wassilysavin/GEMpRF-Assistant.git
+cd GEMpRF-Assistant
+./run.sh
+```
+
+`run.sh` handles everything: installs dependencies into `.venv` (uses [uv](https://docs.astral.sh/uv/) if available, else pip), fetches the corpus submodules under `external/` if they are missing, downloads the embedding models, and gets the Weaviate index — a prebuilt snapshot from GitHub Releases when one is published (seconds), otherwise built locally on first run (10–20 min, one-time) — then drops you into the interactive REPL. Pass a question to answer it and exit:
+
+```bash
+./run.sh "What does nDCT do?"
+```
+
+Requirements: just Python >= 3.10 and git. For the LLM, either export `OPENAI_API_KEY` / `XAI_API_KEY` (also read from `.env`), or do nothing — the script installs [Ollama](https://ollama.com) if needed (Homebrew on macOS, official installer on Linux), starts it, and pulls `mistral-nemo:12b` (~7 GB, one-time).
+
+## Manual setup
 
 ```bash
 git clone --recurse-submodules https://github.com/wassilysavin/GEMpRF-Assistant.git

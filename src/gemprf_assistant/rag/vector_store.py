@@ -72,6 +72,8 @@ class WeaviateHierarchicalStore:
         Path(self._persistence_path).mkdir(parents=True, exist_ok=True)
         return weaviate.connect_to_embedded(
             persistence_data_path=self._persistence_path,
+            port=int(os.getenv("GEMPRF_ASSISTANT_WEAVIATE_EMBEDDED_HTTP_PORT", "8079")),
+            grpc_port=int(os.getenv("GEMPRF_ASSISTANT_WEAVIATE_EMBEDDED_GRPC_PORT", "50050")),
             environment_variables={"LOG_LEVEL": "panic"},
         )
 
