@@ -12,6 +12,7 @@ from weaviate.classes.query import Filter, MetadataQuery
 from weaviate.util import generate_uuid5
 
 from ..models import Chunk, ChunkMetadata, ParentSection
+from ..paths import data_dir
 
 
 SECTION_COLLECTION = "GemPrfSection"
@@ -47,7 +48,7 @@ class WeaviateHierarchicalStore:
     ) -> None:
         self._persistence_path = persistence_path or os.getenv(
             "GEMPRF_ASSISTANT_WEAVIATE_PATH",
-            str(Path.cwd() / "data" / "weaviate"),
+            str(data_dir() / "weaviate"),
         )
         self._mode = (connect_to or os.getenv("GEMPRF_ASSISTANT_WEAVIATE_MODE", "embedded")).strip().lower()
         self._host = host or os.getenv("GEMPRF_ASSISTANT_WEAVIATE_HOST", "localhost")

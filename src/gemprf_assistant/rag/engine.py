@@ -9,6 +9,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from ..embeddings import EmbeddingBackend, build_embedding_backend
 from ..knowledge_base import load_documents, parameter_map, source_map
+from ..paths import data_dir
 from ..models import (
     AnswerResult,
     Citation,
@@ -150,7 +151,7 @@ def _chunk_summaries(chunks: list["RetrievedChunk"]) -> list[dict]:
 
 
 def _default_kg_path() -> Path:
-    return Path(os.getenv("GEMPRF_ASSISTANT_KG_PATH", str(Path.cwd() / "data" / "kg.ttl")))
+    return Path(os.getenv("GEMPRF_ASSISTANT_KG_PATH", str(data_dir() / "kg.ttl")))
 
 
 class GraphRagEngine:
@@ -170,7 +171,7 @@ class GraphRagEngine:
     
         self.sources = source_map()
         self.parameters = parameter_map()
-        self.documents = load_documents()
+        self._documents = None
         self.embedding_backend = embedding_backend or build_embedding_backend()
         self.vector_store = vector_store or WeaviateHierarchicalStore()
         self.vector_store.ensure_schema()
@@ -191,6 +192,13 @@ class GraphRagEngine:
             self.ingest()
         elif not self.knowledge_graph.load():
             self.ingest()
+
+    @property
+    def documents(self):
+        """Corpus documents, loaded lazily: only ingest needs them, so a prebuilt index runs without the corpus."""
+        if self._documents is None:
+            self._documents = load_documents()
+        return self._documents
 
     @staticmethod
     def _resolve_reranker(value):

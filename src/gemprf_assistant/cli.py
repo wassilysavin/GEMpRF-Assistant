@@ -120,7 +120,29 @@ def main() -> None:
     eval_parser.add_argument("--no-judge", action="store_true")
     eval_parser.add_argument("--json", action="store_true")
 
+    snapshot_parser = subparsers.add_parser("snapshot", help="Pack or install a prebuilt index snapshot")
+    snapshot_sub = snapshot_parser.add_subparsers(dest="snapshot_command", required=True)
+    pack_parser = snapshot_sub.add_parser("pack", help="Archive the current index (stop any running assistant first)")
+    pack_parser.add_argument("--out", default=None, help="Archive path (default: ./gemprf-index-snapshot.tar.gz)")
+    install_parser = snapshot_sub.add_parser("install", help="Install a snapshot (local path or URL) into the data dir")
+    install_parser.add_argument("source")
+    install_parser.add_argument("--force", action="store_true", help="Replace an existing index")
+
     args = parser.parse_args()
+
+    # Snapshot commands must run without booting the engine (no index may exist yet).
+    if args.command == "snapshot":
+        from .snapshot import install, pack
+        from .paths import data_dir
+
+        if args.snapshot_command == "pack":
+            print(f"Wrote {pack(args.out)}")
+        else:
+            manifest = install(args.source, force=args.force)
+            print(f"Installed snapshot into {data_dir()}")
+            backend = manifest.get("embedding_backend", "unknown")
+            print(f"Index was built with embedding backend: {backend} — configure the same one for queries.")
+        return
 
     if args.command in {"ask", "repl"}:
         from .preflight import check_local_llm

@@ -155,3 +155,28 @@ export LANGFUSE_HOST=https://cloud.langfuse.com   # or your self-hosted instance
 ```
 
 With the keys set, `ask`/`repl`/`debug` print a per-answer trace URL, `ask --json` includes it as `trace_url`, and eval runs tag each case (`eval:<id>`) and link its trace in the `.review.md` report. Without the keys (or with `GEMPRF_ASSISTANT_TRACING=0`) tracing is a hard no-op.
+
+#### Paths (installed / non-checkout use)
+
+The package is relocatable: install the wheel anywhere and point it at data via env vars. From a source checkout both default to the repo automatically.
+
+- `GEMPRF_ASSISTANT_CORPUS_DIR` — root holding `external/` and `datasets/` (default: the checkout root, else the current directory).
+- `GEMPRF_ASSISTANT_DATA_DIR` — runtime state: Weaviate index, `kg.ttl`, caches (default: `./data`).
+
+#### Prebuilt index snapshot
+
+Installed users don't need the corpus or an ingest run — install a prebuilt index instead:
+
+```bash
+pip install gemprf-assistant
+gemprf-assistant snapshot install <url-or-path>   # ~6 MB tar.gz into ./data (or GEMPRF_ASSISTANT_DATA_DIR)
+gemprf-assistant ask "What does nDCT do?"
+```
+
+Queries must use the same embedding backend that built the index; `snapshot install` prints it from the snapshot manifest.
+
+To publish a snapshot from a checkout with a built index (stop any running assistant first):
+
+```bash
+gemprf-assistant snapshot pack --out gemprf-index-snapshot.tar.gz   # then attach to a GitHub Release
+```

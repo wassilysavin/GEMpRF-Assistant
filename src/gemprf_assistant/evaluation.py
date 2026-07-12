@@ -15,7 +15,9 @@ except ImportError:  # script-style execution (python src/gemprf_assistant/evalu
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from gemprf_assistant import tracing
 
-ROOT = Path(__file__).resolve().parents[2]
+from gemprf_assistant.paths import corpus_root
+
+ROOT = corpus_root()
 DEFAULT_EVAL_PATH = ROOT / "datasets" / "paper_eval_qa.jsonl"
 DEFAULT_RESULTS_PATH = ROOT / "datasets" / "paper_eval_results.json"
 
