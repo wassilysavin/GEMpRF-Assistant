@@ -12,7 +12,8 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 COPY pyproject.toml README.md ./
 COPY src ./src
 COPY external ./external
-RUN pip install --no-cache-dir '.[server]' && chown -R app:app /app
+# Editable install: the package resolves the corpus root relative to its own source tree.
+RUN pip install --no-cache-dir -e '.[server]' && chown -R app:app /app
 
 USER app
 
