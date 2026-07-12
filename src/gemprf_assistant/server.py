@@ -138,6 +138,13 @@ async def _engine_worker(app: FastAPI) -> None:
         payload, future = await app.state.queue.get()
         try:
             result = await loop.run_in_executor(None, _run_ask, app.state.engine, payload)
+            # Log stage timings here, not in the handler: timed-out requests are the
+            # ones whose attribution matters most, and their handler never sees a result.
+            stage_times = " ".join(f"{k}={v}" for k, v in (result.get("timings") or {}).items())
+            logger.info(
+                "answered qid=%s status=%s client_gone=%s %s",
+                _qid(payload.question), result.get("status"), future.cancelled(), stage_times,
+            )
             # Cache even when the client timed out and went away: the work is done,
             # so an immediate retry of the same question succeeds from cache.
             if not payload.history and result.get("answer"):
