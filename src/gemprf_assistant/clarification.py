@@ -363,6 +363,39 @@ def _prior_block(asked: list[tuple[str, str]]) -> str:
     return f"Already asked this session (do NOT repeat or reword these):\n{rows}\n"
 
 
+# Aspect recall: prior turns often already cover an intake aspect (e.g. the goal); extract it from the session history and fold it in instead of re-asking.
+_NOT_COVERED = "NOT_COVERED"
+
+_RECALL_SYSTEM_PROMPT = (
+    "You check whether an earlier conversation already answers ONE intake aspect about the user's "
+    "situation. If it clearly does, reply with that answer, brief and in the user's own words. "
+    "If it does not, reply with exactly " + _NOT_COVERED + ". Output only the answer or "
+    + _NOT_COVERED + "."
+)
+
+_RECALL_HUMAN_PROMPT = (
+    "Conversation:\n{history}\n\nIntake aspect: {aspect}\n\nAnswer from the conversation (or "
+    + _NOT_COVERED + "):"
+)
+
+
+def recall_aspect_from_history(llm, history, aspect: str) -> Optional[str]:
+    """Extract the aspect's answer already present in the session history (None when not covered, no history, or error)."""
+    if llm is None or not history:
+        return None
+    try:
+        messages = ChatPromptTemplate.from_messages(
+            [("system", _RECALL_SYSTEM_PROMPT), ("human", _RECALL_HUMAN_PROMPT)]
+        ).format_messages(history=history.render(), aspect=aspect)
+        response = llm.invoke(messages)
+    except Exception:
+        return None
+    text = str(getattr(response, "content", response)).strip().strip("\"'`")
+    if not text or _NOT_COVERED in text.upper() or len(text) > 300:
+        return None
+    return text
+
+
 def generate_intake_question(
     llm, question: str, aspect: str, asked: Optional[list[tuple[str, str]]] = None
 ) -> Optional[str]:
@@ -395,7 +428,7 @@ def answer_with_clarification(
     max_rounds: Optional[int] = None,
     history=None,
 ) -> QueryAnalysis:
-    """Answer a question; if ungrounded, plan question-specific aspects (static checklist as fallback) and walk them (one question/round, folding replies), re-analyzing after each reply and stopping as soon as it grounds (out-of-scope refuses without asking). `history` resolves follow-up references across REPL turns."""
+    """Answer a question; if ungrounded, plan question-specific aspects (static checklist as fallback) and walk them (one question/round, folding replies), re-analyzing after each reply and stopping as soon as it grounds (out-of-scope refuses without asking). `history` resolves follow-up references across REPL turns and pre-fills intake aspects it already answers."""
     if max_rounds is None:
         max_rounds = _default_max_rounds()
     analysis = engine.analyze(question, history=history)
@@ -435,6 +468,15 @@ def answer_with_clarification(
     replies: list[str] = []
     for i in range(target):
         aspect, fallback = aspects[i]
+        recalled = recall_aspect_from_history(llm, history, aspect)
+        if recalled is not None:
+            # The conversation already answers this aspect: fold it in without re-asking.
+            asked.append((fallback, recalled))
+            replies.append(recalled)
+            analysis = engine.analyze(" ".join([standalone, *replies]), history=history)
+            if not is_unanswered(analysis):
+                return analysis
+            continue
         clarifying = generate_intake_question(llm, standalone, aspect, asked)
         if clarifying is None:
             if i == 0:
