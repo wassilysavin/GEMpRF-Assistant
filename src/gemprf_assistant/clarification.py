@@ -110,12 +110,16 @@ GOAL_ASPECT = (
 # (specific & answerable -> trust a grounded answer). Replaces the brittle evidence-score gates.
 _CLASSIFY_SYSTEM_PROMPT = (
     "Classify a GEM-pRF user's question into ONE word:\n"
-    "VAGUE = a placeholder asking for a value/number/setting/amount with no referent (of WHAT?), "
-    "e.g. 'what value should I choose?', 'how many should there be?', 'what number is best here?'.\n"
+    "VAGUE = an ANCHORLESS placeholder for a value/number/setting/amount where you cannot tell "
+    "WHAT it is about without more context, e.g. 'what value should I choose?', 'how many should "
+    "there be?', 'what number is best here?'. If the question names its own subject, it is NOT vague.\n"
     "OFFTOPIC = specific but NOT about GEM-pRF / pRF mapping / fMRI, e.g. 'best pizza topping', "
     "'train a CNN on ImageNet'.\n"
-    "ONTOPIC = specific AND about GEM-pRF / pRF / fMRI, e.g. 'what does binarization do?', 'how do "
-    "I get accurate fits?', 'can I run without a GPU?'.\n"
+    "ONTOPIC = specific AND about GEM-pRF / pRF / fMRI. This INCLUDES any definitional or factual "
+    "question that names its subject: 'what is nDCT?', 'what is measured_data?', 'what does "
+    "binarization do?', 'what architecture/dataset did the paper use?', 'what is the paper's main "
+    "conclusion?', 'how do I get accurate fits?', 'can I run without a GPU?'. A question about the "
+    "paper, the code, or the meaning of a named thing is ONTOPIC even when broad.\n"
     "Answer with exactly one word: VAGUE, OFFTOPIC, or ONTOPIC."
 )
 
@@ -441,12 +445,16 @@ def answer_with_clarification(
     if kind == "offtopic":
         return analysis  # not GEM-pRF: refuse without interrogating
 
+    if kind == "ontopic":
+        # Specific & on-topic (incl. definitional/paper-fact questions): answer it, or refuse
+        # honestly if unanswered. A factual question ("what architecture did the paper use?") can't
+        # be helped by a situation intake, so never interrogate it.
+        return analysis
+
     if not is_unanswered(analysis):
-        # Trust a grounded direct answer only for a specific question. A VAGUE (anchorless) answer
-        # is a scattershot guess, so clarify. With the classifier off, fall back to the evidence
-        # floor (a confident answer on weak evidence is also an overconfident guess).
-        if kind == "ontopic":
-            return analysis
+        # A VAGUE (anchorless) grounded answer is a scattershot guess, so clarify. With the
+        # classifier off, fall back to the evidence floor (a confident answer on weak evidence is
+        # also an overconfident guess).
         if not kind and not is_overconfident_direct(analysis):
             return analysis
 
