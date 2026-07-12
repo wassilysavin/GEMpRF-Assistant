@@ -569,7 +569,8 @@ class GraphRagEngine:
             for i in range(attempts):
                 try:
                     answer = self._generate_with_llm(question, matched_specs, evidence, rewritten_query, history)
-                    if not answer.startswith("INSUFFICIENT_EVIDENCE:"):
+                    # Match the refusal sentinel anywhere: small models wrap it in a preamble ("...Therefore: INSUFFICIENT_EVIDENCE:..."), which startswith misses and then surfaces as a bogus grounded answer.
+                    if "INSUFFICIENT_EVIDENCE" not in answer.upper():
                         return _strip_citations(answer), True
                     return INSUFFICIENT_EVIDENCE_MESSAGE, False
                 except Exception as exc:  # usually transient (rate limit / timeout)

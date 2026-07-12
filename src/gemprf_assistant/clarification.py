@@ -346,11 +346,12 @@ def _to_mechanism_answer(analysis: QueryAnalysis) -> QueryAnalysis:
 
 
 def is_unanswered(analysis: QueryAnalysis) -> bool:
-    """True when analyze() didn't ground an answer: the refusal, the status-lies refusal, or the engine's parameter-matrix fallback."""
+    """True when analyze() didn't ground an answer: the refusal (incl. sentinel-wrapped), the status-lies refusal, or the engine's parameter-matrix fallback."""
     answer = (analysis.answer or "").strip()
     return (
         analysis.status == "insufficient_evidence"
         or answer == INSUFFICIENT_EVIDENCE_MESSAGE
+        or "INSUFFICIENT_EVIDENCE" in answer.upper()
         or answer.startswith(_MATRIX_PREFIX)
     )
 
@@ -458,8 +459,11 @@ def answer_with_clarification(
         planned = plan_intake_aspects(llm, standalone, analysis)
         if planned == []:
             return analysis  # planner's own gate agreed it's out of scope
-        # Always lead with the goal question, then the planner's situation aspects.
-        aspects = [GOAL_ASPECT] + (planned or [])
+        # Lead with the goal, then the planner's situation aspects. On planner failure (None, common
+        # with a nondeterministic local model) fall back to the static situation checklist rather than
+        # collapsing to goal-only, which starves the reformulation of context and dead-ends the intake.
+        situation = planned if planned is not None else list(INTAKE_ASPECTS[1:])
+        aspects = [GOAL_ASPECT] + situation
     else:
         aspects = INTAKE_ASPECTS
 
