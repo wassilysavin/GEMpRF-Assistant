@@ -119,6 +119,13 @@ def _strip_citations(text: str) -> str:
     return cleaned.strip()
 
 
+def _is_followup_rewrite(original: str, contextual: str) -> bool:
+    """True when the condense step meaningfully rewrote the question (a real follow-up), ignoring case/punctuation/whitespace-only reformatting."""
+    def norm(s: str) -> str:
+        return " ".join((s or "").lower().split()).strip(" ?.!")
+    return norm(contextual) != norm(original)
+
+
 def _default_kg_path() -> Path:
     return Path(os.getenv("GEMPRF_ASSISTANT_KG_PATH", str(Path.cwd() / "data" / "kg.ttl")))
 
@@ -267,9 +274,10 @@ class GraphRagEngine:
         # against the session history before retrieval; the LLM condense returns it unchanged if
         # already self-contained.
         contextual = history.contextualize(question, self.llm) if history else question
-        contextualized = contextual if contextual != question else None
+        is_followup = history is not None and _is_followup_rewrite(question, contextual)
+        contextualized = contextual if is_followup else None
         rewritten = self._hyde_query(contextual) or self._rewrite_query(contextual)
-        if rewritten is None and contextual != question:
+        if rewritten is None and is_followup:
             rewritten = contextual
         retrieval_query = rewritten or question
 
@@ -329,7 +337,10 @@ class GraphRagEngine:
                 contextualized_question=contextualized,
             )
 
-        answer, used_llm = self._generate_answer(question, matched_specs, evidence, rewritten, history)
+        # History feeds the answer prompt only for genuine follow-ups: a self-contained question needs no
+        # reference resolution, and prior (often refusal-laden) turns would only bias the fresh answer.
+        answer_history = history if is_followup else None
+        answer, used_llm = self._generate_answer(question, matched_specs, evidence, rewritten, answer_history)
         # Refusal-only fallback: if the LLM refused, back off to corpus-grounded relations
         # rather than perturbing answers it could already ground from retrieval.
         if answer == INSUFFICIENT_EVIDENCE_MESSAGE:

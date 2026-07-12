@@ -14,7 +14,10 @@ _CONDENSE_SYSTEM = (
     "You rewrite a user's latest question into a STANDALONE GEM-pRF question. If it refers to "
     "something from the conversation ('it', 'that parameter', 'what value in my case?'), fold that "
     "referent in so the question stands on its own. If it is already self-contained, return it "
-    "UNCHANGED. Do not answer it, do not add new topics -- output only the rewritten question."
+    "UNCHANGED -- a question that names its own subject (e.g. 'What is nDCT?', 'What does "
+    "binarization do?') is self-contained even when earlier turns discussed other settings, so do "
+    "NOT graft that prior context onto it. Do not answer it, do not add new topics -- output only "
+    "the rewritten question."
 )
 
 _CONDENSE_HUMAN = "Conversation:\n{history}\n\nLatest question: {question}\n\nStandalone question:"

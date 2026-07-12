@@ -162,6 +162,8 @@ def main() -> None:
                 break
             analysis = _answer_question(engine, question, history)
             if history is not None:
+                # Record the raw user turn (not the resolved/reformulated query, which would feed
+                # stale context back into history); the answer already carries the substance.
                 history.add(question, analysis.answer)
             print()
     finally:
