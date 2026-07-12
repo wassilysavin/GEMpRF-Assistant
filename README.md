@@ -26,8 +26,12 @@ INGEST
         +--> RDF knowledge graph (sources -- parameters -- sections -- chunks)
 
 
-QUERY
+QUERY  (engine.analyze -- stateless; per-session state lives in the conversation layer below)
   question
+    |
+    v
+  follow-up condense (REPL only): LLM rewrites "what about it?" into a standalone question;
+    a meaningful rewrite marks the turn a follow-up (a self-contained question passes through unchanged)
     |
     v
   rewrite: HyDE (gated by rare-anchor check)  OR  LLM keyword-rewrite
@@ -43,24 +47,71 @@ QUERY
     fused on per-arm min-max-normalised scores (+ parent-match & graph boosts), not RRF
     |
     v
-  cross-encoder rerank  -->  per-source diversity cap  -->  top-k
+  cross-encoder rerank (pool default 12, GEMPRF_ASSISTANT_RERANK_POOL)  -->  per-source diversity cap  -->  top-k
     |
     v
   evidence floor?  -- no -->  relation fallback*  (else "INSUFFICIENT_EVIDENCE")
     | yes
     v
   LLM (OpenAI / xAI / Ollama) with system+human prompt
-        - answer from evidence or emit INSUFFICIENT_EVIDENCE:
+        (history block added only for genuine follow-ups -- as context, never as evidence; a
+         self-contained question gets none, so stale prior turns can't bias its answer)
+        - answer from evidence or emit INSUFFICIENT_EVIDENCE (matched anywhere, even when the model wraps it in a preamble)
         - on LLM refusal: relation fallback*  (else "INSUFFICIENT_EVIDENCE")
         - on LLM error: retry, then extractive fallback (stitch top chunks)
     |
     v
   strip [source.id] brackets  -->  AnswerResult { answer, citations, matched_params }
 
+
+CONVERSATION LAYER  (REPL; engines stay stateless)
+  rolling window of the last N answered turns (default 4; GEMPRF_ASSISTANT_HISTORY / _HISTORY_TURNS)
+    - before retrieval: LLM condense of a follow-up into a standalone question (see QUERY);
+      the condensed form also drives clarification's classify / plan / reformulate
+    - in the answer prompt: rendered history block used as context only (never as evidence),
+      and only when the turn is a genuine follow-up -- a self-contained question gets no history
+
+
+CLARIFICATION INTAKE  (wraps analyze() in `ask` and the REPL: when the engine can't
+  ground an answer, gather the user's situation instead of dead-ending on a refusal)
+
+  classify the resolved (standalone) question -- one LLM word: ONTOPIC / VAGUE / OFFTOPIC
+    (fallback when the gate is off: deterministic evidence-score floors for
+     scope + overconfident-direct-answer detection)
+    |
+    +-- OFFTOPIC ------------------> refuse without asking
+    +-- ONTOPIC -------------------> return the direct answer, or refuse honestly if ungrounded
+    |                                (a specific/factual question is never interrogated)
+    +-- VAGUE or ungrounded:
+          |
+          v
+  plan 2-4 question-specific intake aspects from the failed analysis
+    (LLM planner over failure reason + near-miss evidence; static checklist
+     as fallback on planner failure; the user's goal is always the first aspect)
+    |
+    v
+  intake loop (max GEMPRF_ASSISTANT_CLARIFY_MAX_ROUNDS): one clarifying
+  question per aspect, fold each reply in, re-analyze -- stop as soon as it grounds
+    (an aspect the conversation history already answers is folded in silently, not re-asked)
+    |
+    v
+  reformulate: synthesize question + gathered context into ONE concrete
+  GEM-pRF query, re-analyze
+    |
+    v
+  drift guard: return the reformulated answer only if an LLM check says it
+  addresses the ORIGINAL question
+    |
+    v
+  mechanism fallback: still ungrounded --> present the doc-grounded parameter
+  relations as a real answer conditioned on the gathered context, not a refusal
+
   * relation fallback (refusal-only): instead of a dead-end refusal, return
-    corpus-grounded parameter relations -- targeted to a parameter the question
-    literally names (lexical match; embedding score does not separate on/off-topic),
-    else a compact universal parameter-interaction matrix. Deterministic, no LLM;
+    corpus-grounded content -- a deterministic capability answer for pRF-model
+    capability questions (2D Gaussian vs DoG/CSS), else relations for a parameter
+    the question literally names (lexical match), else a confident relation-covered
+    embedding match the question names, else a compact universal
+    parameter-interaction matrix. Deterministic, no LLM;
     toggle via GEMPRF_ASSISTANT_RELATIONS.
 ```
 
@@ -89,5 +140,6 @@ Set one of:
 ```bash
 python scripts/ingest.py                  
 python -m gemprf_assistant.cli ask "What does nDCT do?"
+python -m gemprf_assistant.cli repl       # interactive; follow-ups resolve via conversation history
 # python -m gemprf_assistant.cli eval       
 ```
