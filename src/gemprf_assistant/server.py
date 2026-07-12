@@ -172,6 +172,8 @@ def _run_ask(engine, payload: ChatRequest) -> dict:
 
 
 def create_app() -> FastAPI:
+    # Uvicorn only configures its own loggers; without this our INFO lines are dropped.
+    logging.basicConfig(level=os.getenv("GEMPRF_ASSISTANT_LOG_LEVEL", "INFO"))
     config = ApiConfig()
 
     @asynccontextmanager
