@@ -135,11 +135,16 @@ async def _engine_worker(app: FastAPI) -> None:
     loop = asyncio.get_running_loop()
     while True:
         payload, future = await app.state.queue.get()
-        if future.cancelled():
-            app.state.queue.task_done()
-            continue
         try:
             result = await loop.run_in_executor(None, _run_ask, app.state.engine, payload)
+            # Cache even when the client timed out and went away: the work is done,
+            # so an immediate retry of the same question succeeds from cache.
+            if not payload.history and result.get("answer"):
+                app.state.cache.put(payload.question, {
+                    "answer": result.get("answer", ""),
+                    "status": result.get("status", "unknown"),
+                    "citations": result.get("citations", []),
+                })
             if not future.cancelled():
                 future.set_result(result)
         except Exception as exc:  # engine failures must not kill the worker
@@ -183,6 +188,7 @@ def create_app() -> FastAPI:
     app.state.config = config
     limiter = _RateLimiter(config.rate_per_min)
     cache = _AnswerCache(config.cache_size)
+    app.state.cache = cache  # the worker also writes to it (cache-on-timeout)
 
     app.add_middleware(
         CORSMiddleware,
@@ -241,8 +247,6 @@ def create_app() -> FastAPI:
             "status": result.get("status", "unknown"),
             "citations": result.get("citations", []),
         }
-        if not payload.history and body["answer"]:
-            cache.put(payload.question, body)
         logger.info(
             "chat qid=%s status=%s cache=miss elapsed=%.2f queue=%d",
             qid, body["status"], elapsed, app.state.queue.qsize(),
