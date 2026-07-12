@@ -400,7 +400,9 @@ def answer_with_clarification(
         max_rounds = _default_max_rounds()
     analysis = engine.analyze(question, history=history)
     llm = getattr(engine, "llm", None)
-    kind = classify_question(llm, question)  # 'vague' | 'offtopic' | 'ontopic' | '' (gate disabled)
+    # Judge follow-ups by what they resolve to, not their raw text (a bare "Why" reads as vague).
+    standalone = getattr(analysis, "contextualized_question", None) or question
+    kind = classify_question(llm, standalone)  # 'vague' | 'offtopic' | 'ontopic' | '' (gate disabled)
 
     if kind == "offtopic":
         return analysis  # not GEM-pRF: refuse without interrogating
@@ -420,7 +422,7 @@ def answer_with_clarification(
     if _planner_enabled():
         if not kind and not is_in_scope(analysis):
             return analysis  # deterministic scope fallback when the classifier didn't run
-        planned = plan_intake_aspects(llm, question, analysis)
+        planned = plan_intake_aspects(llm, standalone, analysis)
         if planned == []:
             return analysis  # planner's own gate agreed it's out of scope
         # Always lead with the goal question, then the planner's situation aspects.
@@ -433,7 +435,7 @@ def answer_with_clarification(
     replies: list[str] = []
     for i in range(target):
         aspect, fallback = aspects[i]
-        clarifying = generate_intake_question(llm, question, aspect, asked)
+        clarifying = generate_intake_question(llm, standalone, aspect, asked)
         if clarifying is None:
             if i == 0:
                 return analysis  # out-of-scope gate: decline on the first aspect -> refuse
@@ -448,7 +450,7 @@ def answer_with_clarification(
         asked.append((clarifying, reply))
         replies.append(reply)
         # Cheap early exit: if the raw fold happens to ground already, take it.
-        analysis = engine.analyze(" ".join([question, *replies]), history=history)
+        analysis = engine.analyze(" ".join([standalone, *replies]), history=history)
         if not is_unanswered(analysis):
             return analysis
 
@@ -458,13 +460,13 @@ def answer_with_clarification(
     # Map the gathered situation to a concrete GEM-pRF query and re-analyze: this is what actually
     # grounds the answerable questions that the raw fold never could.
     if _reformulate_enabled():
-        concrete = reformulate_query(llm, question, asked)
+        concrete = reformulate_query(llm, standalone, asked)
         if concrete:
             reanalyzed = engine.analyze(concrete, history=history)
             if not is_unanswered(reanalyzed):
                 # Only return it if it actually addresses the original question; a drifted answer
                 # (grounded in the wrong corpus region) falls through to the honest mechanism answer.
-                if answer_is_relevant(llm, question, asked, reanalyzed.answer):
+                if answer_is_relevant(llm, standalone, asked, reanalyzed.answer):
                     return reanalyzed
             else:
                 analysis = reanalyzed  # carry the concrete-query evidence into the mechanism fallback

@@ -106,3 +106,4 @@ class QueryAnalysis:
     used_llm: bool = False
     rerank_used: bool = False
     rewritten_query: str | None = None
+    contextualized_question: str | None = None  # follow-up resolved against history (None if unchanged)

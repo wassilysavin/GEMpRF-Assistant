@@ -267,6 +267,7 @@ class GraphRagEngine:
         # against the session history before retrieval; the LLM condense returns it unchanged if
         # already self-contained.
         contextual = history.contextualize(question, self.llm) if history else question
+        contextualized = contextual if contextual != question else None
         rewritten = self._hyde_query(contextual) or self._rewrite_query(contextual)
         if rewritten is None and contextual != question:
             rewritten = contextual
@@ -312,6 +313,7 @@ class GraphRagEngine:
                     used_llm=False,
                     rerank_used=rerank_used,
                     rewritten_query=rewritten,
+                    contextualized_question=contextualized,
                 )
             return QueryAnalysis(
                 question=question,
@@ -324,6 +326,7 @@ class GraphRagEngine:
                 used_llm=False,
                 rerank_used=rerank_used,
                 rewritten_query=rewritten,
+                contextualized_question=contextualized,
             )
 
         answer, used_llm = self._generate_answer(question, matched_specs, evidence, rewritten, history)
@@ -344,6 +347,7 @@ class GraphRagEngine:
             used_llm=used_llm,
             rerank_used=rerank_used,
             rewritten_query=rewritten,
+            contextualized_question=contextualized,
         )
 
     def describe(self) -> dict:
