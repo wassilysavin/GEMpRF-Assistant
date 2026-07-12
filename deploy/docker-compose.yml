@@ -1,0 +1,58 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    environment:
+      # Keep the model resident: reloading ~4.7 GB from disk per request would add 10-20s.
+      OLLAMA_KEEP_ALIVE: "-1"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_CONTEXT_LENGTH: "8192"
+    volumes:
+      - ollama:/root/.ollama
+
+  # One-shot: pulls the model into the shared volume, then exits.
+  ollama-init:
+    image: ollama/ollama:latest
+    depends_on:
+      - ollama
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c", "sleep 3 && OLLAMA_HOST=http://ollama:11434 ollama pull ${OLLAMA_MODEL:-qwen2.5:7b}"]
+    volumes:
+      - ollama:/root/.ollama
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - ollama
+    environment:
+      GEMPRF_ASSISTANT_LLM_PROVIDER: ollama
+      GEMPRF_ASSISTANT_OLLAMA_BASE_URL: http://ollama:11434/v1
+      GEMPRF_ASSISTANT_OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
+      GEMPRF_ASSISTANT_API_CORS: ${API_CORS:-https://gemprf.github.io}
+    volumes:
+      - apidata:/data
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  ollama:
+  apidata:
+  caddy_data:
+  caddy_config:
