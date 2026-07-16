@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 from langchain_core.prompts import ChatPromptTemplate
 
+from . import tracing
+
 _DEFAULT_MAX_TURNS = 4
 # Per-turn answer cap keeps the history block's LLM prefill bounded.
 _ANSWER_CHAR_CAP = 500
@@ -75,7 +77,7 @@ class ConversationHistory:
             messages = ChatPromptTemplate.from_messages(
                 [("system", _CONDENSE_SYSTEM), ("human", _CONDENSE_HUMAN)]
             ).format_messages(history=self.render(), question=question)
-            response = llm.invoke(messages)
+            response = llm.invoke(messages, **tracing.invoke_kwargs())
         except Exception:
             return question
         text = str(getattr(response, "content", response)).strip().strip("\"'`")

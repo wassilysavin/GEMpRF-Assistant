@@ -9,6 +9,12 @@ from pathlib import Path
 from statistics import mean
 from typing import Iterable
 
+try:
+    from . import tracing
+except ImportError:  # script-style execution (python src/gemprf_assistant/evaluation.py)
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from gemprf_assistant import tracing
+
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_EVAL_PATH = ROOT / "datasets" / "paper_eval_qa.jsonl"
 DEFAULT_RESULTS_PATH = ROOT / "datasets" / "paper_eval_results.json"
@@ -44,6 +50,7 @@ class CaseResult:
     engine_status: str = ""
     used_llm: bool = False
     rerank_used: bool = False
+    trace_url: str | None = None
 
 
 def load_eval_set(path: Path = DEFAULT_EVAL_PATH) -> list[dict]:
@@ -401,7 +408,8 @@ def evaluate(
     results: list[CaseResult] = []
     for i, case in enumerate(cases, 1):
         start = time.monotonic()
-        ans = engine.ask_dict(case["question"], top_k=top_k)
+        with tracing.trace_attributes(trace_name=f"eval:{case['id']}", tags=["eval"]):
+            ans = engine.ask_dict(case["question"], top_k=top_k)
         latency = time.monotonic() - start
 
         evidence = ans["evidence"]
@@ -423,6 +431,7 @@ def evaluate(
             engine_status=ans["status"],
             used_llm=bool(ans.get("used_llm")),
             rerank_used=bool(ans.get("rerank_used")),
+            trace_url=ans.get("trace_url"),
         )
         if judge is not None:
             j = judge_case(judge, case, ans["answer"], evidence)
@@ -541,6 +550,7 @@ def main(argv: list[str] | None = None) -> None:
                 f"Gold: {case_result.gold_answer or '(none — expected refusal)'}\n\n"
                 f"Model answer:\n\n{case_result.model_answer.strip()}\n\n"
                 + (f"Judge rationale: {case_result.judge_rationale}\n\n" if case_result.judge_rationale else "")
+                + (f"Trace: {case_result.trace_url}\n\n" if case_result.trace_url else "")
                 + f"{sources_block}\n\n"
                 "---\n"
             )
@@ -563,6 +573,7 @@ def main(argv: list[str] | None = None) -> None:
     except ValueError:
         display_path = args.output
     print(f"\nwrote {display_path}")
+    tracing.flush()
 
 
 if __name__ == "__main__":

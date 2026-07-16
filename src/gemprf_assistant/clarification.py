@@ -5,6 +5,7 @@ from typing import Callable, Optional
 
 from langchain_core.prompts import ChatPromptTemplate
 
+from . import tracing
 from .models import QueryAnalysis
 from .rag.parameter_relations import PARAMETER_MATRIX
 from .rag.prompts import INSUFFICIENT_EVIDENCE_MESSAGE
@@ -140,7 +141,7 @@ def classify_question(llm, question: str) -> str:
         messages = ChatPromptTemplate.from_messages(
             [("system", _CLASSIFY_SYSTEM_PROMPT), ("human", _CLASSIFY_HUMAN_PROMPT)]
         ).format_messages(question=question)
-        response = llm.invoke(messages)
+        response = llm.invoke(messages, **tracing.invoke_kwargs())
     except Exception:
         return ""
     text = str(getattr(response, "content", response)).upper()
@@ -239,7 +240,7 @@ def plan_intake_aspects(
         ).format_messages(
             question=question, failure=_failure_mode(analysis), corpus=_corpus_block(analysis)
         )
-        response = llm.invoke(messages)
+        response = llm.invoke(messages, **tracing.invoke_kwargs())
     except Exception:
         return None
     text = str(getattr(response, "content", response)).strip()
@@ -286,7 +287,7 @@ def reformulate_query(llm, question: str, asked: list[tuple[str, str]]) -> Optio
         messages = ChatPromptTemplate.from_messages(
             [("system", REFORMULATE_SYSTEM_PROMPT), ("human", REFORMULATE_HUMAN_PROMPT)]
         ).format_messages(question=question, context=_context_block(asked))
-        response = llm.invoke(messages)
+        response = llm.invoke(messages, **tracing.invoke_kwargs())
     except Exception:
         return None
     text = str(getattr(response, "content", response)).strip().strip("\"'`")
@@ -317,7 +318,7 @@ def answer_is_relevant(llm, question: str, asked: list[tuple[str, str]], answer:
         messages = ChatPromptTemplate.from_messages(
             [("system", RELEVANCE_SYSTEM_PROMPT), ("human", RELEVANCE_HUMAN_PROMPT)]
         ).format_messages(question=question, context=_context_block(asked), answer=answer[:1500])
-        response = llm.invoke(messages)
+        response = llm.invoke(messages, **tracing.invoke_kwargs())
     except Exception:
         return True
     return "OFFTOPIC" not in str(getattr(response, "content", response)).upper().replace(" ", "")
@@ -392,7 +393,7 @@ def recall_aspect_from_history(llm, history, aspect: str) -> Optional[str]:
         messages = ChatPromptTemplate.from_messages(
             [("system", _RECALL_SYSTEM_PROMPT), ("human", _RECALL_HUMAN_PROMPT)]
         ).format_messages(history=history.render(), aspect=aspect)
-        response = llm.invoke(messages)
+        response = llm.invoke(messages, **tracing.invoke_kwargs())
     except Exception:
         return None
     text = str(getattr(response, "content", response)).strip().strip("\"'`")
@@ -412,7 +413,7 @@ def generate_intake_question(
         messages = ChatPromptTemplate.from_messages(
             [("system", system_prompt), ("human", INTAKE_HUMAN_PROMPT)]
         ).format_messages(question=question, aspect=aspect, prior=_prior_block(asked or []))
-        response = llm.invoke(messages)
+        response = llm.invoke(messages, **tracing.invoke_kwargs())
     except Exception:
         return None
     text = str(getattr(response, "content", response)).strip().strip("\"'`")
@@ -434,6 +435,20 @@ def answer_with_clarification(
     history=None,
 ) -> QueryAnalysis:
     """Answer a question; if ungrounded, plan question-specific aspects (static checklist as fallback) and walk them (one question/round, folding replies), re-analyzing after each reply and stopping as soon as it grounds (out-of-scope refuses without asking). `history` resolves follow-up references across REPL turns and pre-fills intake aspects it already answers."""
+    with tracing.span("clarify_and_answer", input={"question": question}) as root:
+        analysis = _answer_with_clarification(engine, question, input_fn, output_fn, max_rounds, history)
+        root.update(output={"status": analysis.status, "answer": analysis.answer})
+    return analysis
+
+
+def _answer_with_clarification(
+    engine,
+    question: str,
+    input_fn: Callable[[str], str],
+    output_fn: Callable[[str], None],
+    max_rounds: Optional[int],
+    history,
+) -> QueryAnalysis:
     if max_rounds is None:
         max_rounds = _default_max_rounds()
     analysis = engine.analyze(question, history=history)

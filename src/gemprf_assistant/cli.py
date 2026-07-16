@@ -16,6 +16,7 @@ try:
 except ImportError:
     pass
 
+from . import tracing
 from .evaluation import evaluate, format_table, load_eval_set
 from .rag.engine import GraphRagEngine
 
@@ -69,6 +70,13 @@ def _answer_question(engine, question: str, history=None):
     analysis = answer_with_clarification(engine, question, history=history)
     _print_analysis_result(analysis)
     return analysis
+
+
+def _print_trace_url(engine) -> None:
+    """Point at the Langfuse trace for the answer just printed (silent when tracing is off)."""
+    url = getattr(engine, "last_trace_url", None)
+    if url:
+        print(f"\nTrace: {url}")
 
 
 def _print_analysis(analysis) -> None:
@@ -127,6 +135,7 @@ def main() -> None:
                 print(json.dumps(engine.ask_dict(args.question, top_k=args.top_k), indent=2))
             else:
                 _answer_question(engine, args.question)
+                _print_trace_url(engine)
             return
 
         if args.command == "debug":
@@ -136,6 +145,7 @@ def main() -> None:
                 print(json.dumps(payload, indent=2))
             else:
                 _print_analysis(analysis)
+                _print_trace_url(engine)
             return
 
         if args.command == "describe":
@@ -166,12 +176,14 @@ def main() -> None:
             if not question or question.lower() in {"exit", "quit"}:
                 break
             analysis = _answer_question(engine, question, history)
+            _print_trace_url(engine)
             if history is not None:
                 # Record the raw user turn (not the resolved/reformulated query, which would feed
                 # stale context back into history); the answer already carries the substance.
                 history.add(question, analysis.answer)
             print()
     finally:
+        tracing.flush()
         engine.close()
 
 
@@ -195,7 +207,9 @@ def ask_main() -> None:
             print(json.dumps(engine.ask_dict(args.question, top_k=args.top_k), indent=2))
         else:
             _answer_question(engine, args.question)
+            _print_trace_url(engine)
     finally:
+        tracing.flush()
         engine.close()
 
 

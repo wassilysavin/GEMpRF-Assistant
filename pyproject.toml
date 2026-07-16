@@ -25,6 +25,9 @@ dev = [
 eval = [
   "ragas>=0.2,<0.3",
 ]
+trace = [
+  "langfuse>=4,<5",
+]
 
 [project.scripts]
 gemprf-assistant = "gemprf_assistant.cli:main"

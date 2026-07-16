@@ -143,3 +143,15 @@ python -m gemprf_assistant.cli ask "What does nDCT do?"
 python -m gemprf_assistant.cli repl       # interactive; follow-ups resolve via conversation history
 # python -m gemprf_assistant.cli eval       
 ```
+
+#### Tracing (optional)
+
+Every answer can be traced back step-by-step (contextualize → query expansion → retrieval hits + scores → rerank → evidence selection → the exact LLM prompt/completion → fallbacks) in [Langfuse](https://langfuse.com):
+
+```bash
+pip install -e ".[trace]"
+export LANGFUSE_PUBLIC_KEY=pk-... LANGFUSE_SECRET_KEY=sk-...
+export LANGFUSE_HOST=https://cloud.langfuse.com   # or your self-hosted instance
+```
+
+With the keys set, `ask`/`repl`/`debug` print a per-answer trace URL, `ask --json` includes it as `trace_url`, and eval runs tag each case (`eval:<id>`) and link its trace in the `.review.md` report. Without the keys (or with `GEMPRF_ASSISTANT_TRACING=0`) tracing is a hard no-op.

@@ -43,6 +43,7 @@ from .retrieval import HierarchicalRetriever, RetrievalConfig
 from .vector_store import WeaviateHierarchicalStore
 
 from ..llm import build_chat_llm
+from .. import tracing
 
 
 _DEFAULT_TOP_K = 6
@@ -133,6 +134,21 @@ def _is_followup_rewrite(original: str, contextual: str) -> bool:
     return norm(contextual) != norm(original)
 
 
+def _chunk_summaries(chunks: list["RetrievedChunk"]) -> list[dict]:
+    """Compact per-chunk view (ids, heading, scores, preview) for trace spans."""
+    return [
+        {
+            "chunk_id": r.chunk.metadata.chunk_id,
+            "source_id": r.chunk.metadata.source_id,
+            "heading": " > ".join(r.chunk.metadata.heading_path),
+            "score": float(r.score),
+            "rerank_score": float(r.rerank_score) if r.rerank_score is not None else None,
+            "preview": r.chunk.text[:200],
+        }
+        for r in chunks
+    ]
+
+
 def _default_kg_path() -> Path:
     return Path(os.getenv("GEMPRF_ASSISTANT_KG_PATH", str(Path.cwd() / "data" / "kg.ttl")))
 
@@ -169,6 +185,7 @@ class GraphRagEngine:
             list(self.parameters.values()), self.embedding_backend.embed_texts
         )
         self.llm = None if llm is False else (llm if llm is not None else self._build_llm())
+        self.last_trace_url: str | None = None  # Langfuse URL of the most recent analyze() trace
 
         if auto_ingest and not self._is_populated():
             self.ingest()
@@ -274,52 +291,82 @@ class GraphRagEngine:
             "used_llm": result.used_llm,
             "rerank_used": result.rerank_used,
             "rewritten_query": result.rewritten_query,
+            "trace_url": self.last_trace_url,
         }
 
     def analyze(self, question: str, top_k: int = _DEFAULT_TOP_K, history=None) -> QueryAnalysis:
+        """Trace-wrapped pipeline: each step of _analyze lands as a Langfuse span (no-op when tracing is off)."""
+        with tracing.span("analyze", input={"question": question, "top_k": top_k}) as root:
+            analysis = self._analyze(question, top_k=top_k, history=history)
+            root.update(output={"status": analysis.status, "used_llm": analysis.used_llm, "answer": analysis.answer})
+            self.last_trace_url = tracing.current_trace_url()
+        return analysis
+
+    def _analyze(self, question: str, top_k: int = _DEFAULT_TOP_K, history=None) -> QueryAnalysis:
         # Resolve follow-ups ("it", "that value", "what value in my case?") into a standalone query
         # against the session history before retrieval; the LLM condense returns it unchanged if
         # already self-contained.
-        contextual = history.contextualize(question, self.llm) if history else question
-        is_followup = history is not None and _is_followup_rewrite(question, contextual)
-        contextualized = contextual if is_followup else None
-        rewritten = self._hyde_query(contextual) or self._rewrite_query(contextual)
-        if rewritten is None and is_followup:
-            rewritten = contextual
-        retrieval_query = rewritten or question
+        with tracing.span("contextualize", input={"question": question}) as sp:
+            contextual = history.contextualize(question, self.llm) if history else question
+            is_followup = history is not None and _is_followup_rewrite(question, contextual)
+            contextualized = contextual if is_followup else None
+            sp.update(output={"contextual": contextual, "is_followup": is_followup})
+        with tracing.span("expand_query", input={"question": contextual}) as sp:
+            rewritten = self._hyde_query(contextual) or self._rewrite_query(contextual)
+            expanded = rewritten is not None
+            if rewritten is None and is_followup:
+                rewritten = contextual
+            retrieval_query = rewritten or question
+            sp.update(output={
+                "retrieval_query": retrieval_query,
+                "expanded": expanded,
+                "skip_reason": None if expanded else self._expansion_skip_reason(contextual),
+            })
 
         # Use the query-side embedding (applies the model's query prefix for
         # instruction-tuned embedders like e5; a no-op for plain models).
         _embed_q = getattr(self.embedding_backend, "embed_query", self.embedding_backend.embed_texts)
         question_embedding = _embed_q([retrieval_query])[0]
 
-        matched_pairs = self.parameter_matcher.match_with_scores(question_embedding)
-        matched_specs = [spec for spec, _ in matched_pairs]
-        matched_parameter_scores = {spec.id: float(score) for spec, score in matched_pairs}
+        with tracing.span("match_parameters") as sp:
+            matched_pairs = self.parameter_matcher.match_with_scores(question_embedding)
+            matched_specs = [spec for spec, _ in matched_pairs]
+            matched_parameter_scores = {spec.id: float(score) for spec, score in matched_pairs}
+            sp.update(output=matched_parameter_scores)
 
         rerank_pool = _rerank_pool_size()
-        first_pass = self.retriever.retrieve(
-            question=retrieval_query,
-            question_vector=question_embedding,
-            matched_parameter_ids=[spec.id for spec in matched_specs],
-            matched_parameter_scores=matched_parameter_scores,
-            limit=rerank_pool,
-        )
+        with tracing.span(
+            "retrieve", as_type="retriever", input={"query": retrieval_query, "limit": rerank_pool}
+        ) as sp:
+            first_pass = self.retriever.retrieve(
+                question=retrieval_query,
+                question_vector=question_embedding,
+                matched_parameter_ids=[spec.id for spec in matched_specs],
+                matched_parameter_scores=matched_parameter_scores,
+                limit=rerank_pool,
+            )
+            sp.update(output=_chunk_summaries(first_pass))
 
         rerank_used = False
         if self.reranker is not None and first_pass:
-            first_pass, rerank_used = self.reranker.rerank(retrieval_query, first_pass, top_k=rerank_pool)
+            with tracing.span("rerank", input={"query": retrieval_query, "pool": len(first_pass)}) as sp:
+                first_pass, rerank_used = self.reranker.rerank(retrieval_query, first_pass, top_k=rerank_pool)
+                sp.update(output={"rerank_used": rerank_used, "ranking": _chunk_summaries(first_pass)})
 
-        evidence = self._select_evidence(first_pass, top_k)
-        # Guarantee a confidently-matched parameter's curated code reaches the LLM: organic
-        # retrieval ranks code chunks inconsistently across phrasings. Ranked on the resolved
-        # question (contextual), so the logic body wins over stubs like a bare __init__.
-        evidence = self._inject_code_evidence(evidence, matched_specs, matched_parameter_scores, contextual)
+        with tracing.span("select_evidence", input={"top_k": top_k}) as sp:
+            evidence = self._select_evidence(first_pass, top_k)
+            # Guarantee a confidently-matched parameter's curated code reaches the LLM: organic
+            # retrieval ranks code chunks inconsistently across phrasings. Ranked on the resolved
+            # question (contextual), so the logic body wins over stubs like a bare __init__.
+            evidence = self._inject_code_evidence(evidence, matched_specs, matched_parameter_scores, contextual)
+            sp.update(output=_chunk_summaries(evidence))
         citations = self._build_citations(evidence, matched_specs)
         if not self._has_supporting_evidence(evidence, rerank_used):
             # Retrieval found nothing, but a matched parameter may carry corpus-grounded
             # relations; answer deterministically from those rather than refusing outright.
-            relation_answer = self._relation_fallback(question, matched_specs, matched_parameter_scores)
+            with tracing.span("relation_fallback", input={"trigger": "no_supporting_evidence"}) as sp:
+                relation_answer = self._relation_fallback(question, matched_specs, matched_parameter_scores)
+                sp.update(output={"answered": relation_answer is not None})
             if relation_answer is not None:
                 return QueryAnalysis(
                     question=question,
@@ -351,11 +398,15 @@ class GraphRagEngine:
         # History feeds the answer prompt only for genuine follow-ups: a self-contained question needs no
         # reference resolution, and prior (often refusal-laden) turns would only bias the fresh answer.
         answer_history = history if is_followup else None
-        answer, used_llm = self._generate_answer(question, matched_specs, evidence, rewritten, answer_history)
+        with tracing.span("generate_answer", input={"question": question}) as sp:
+            answer, used_llm = self._generate_answer(question, matched_specs, evidence, rewritten, answer_history)
+            sp.update(output={"answer": answer, "used_llm": used_llm})
         # Refusal-only fallback: if the LLM refused, back off to corpus-grounded relations
         # rather than perturbing answers it could already ground from retrieval.
         if answer == INSUFFICIENT_EVIDENCE_MESSAGE:
-            relation_answer = self._relation_fallback(question, matched_specs, matched_parameter_scores)
+            with tracing.span("relation_fallback", input={"trigger": "llm_refusal"}) as sp:
+                relation_answer = self._relation_fallback(question, matched_specs, matched_parameter_scores)
+                sp.update(output={"answered": relation_answer is not None})
             if relation_answer is not None:
                 answer, used_llm = relation_answer, False
         return QueryAnalysis(
@@ -555,6 +606,19 @@ class GraphRagEngine:
                     return True
         return False
 
+    def _expansion_skip_reason(self, question: str) -> str:
+        """Why expand_query passed the question through unchanged (for the trace span)."""
+        hyde_on = os.getenv("GEMPRF_ASSISTANT_HYDE", "0").strip() == "1"
+        rewrite_on = os.getenv("GEMPRF_ASSISTANT_QUERY_REWRITE", "1").strip() != "0"
+        if not hyde_on and not rewrite_on:
+            return "expansion disabled (GEMPRF_ASSISTANT_HYDE=0, GEMPRF_ASSISTANT_QUERY_REWRITE=0)"
+        if self.llm is None:
+            return "no LLM configured"
+        subject = self._extract_subject(question) or question
+        if self._subject_has_rare_anchor(subject):
+            return f"rare-anchor gate: subject '{subject}' already retrieves well bare"
+        return "LLM expansion returned nothing usable"
+
     def _hyde_query(self, question: str) -> str | None:
         """HyDE expansion
         """
@@ -571,7 +635,7 @@ class GraphRagEngine:
                 [("system", HYDE_SYSTEM_PROMPT), ("human", "{question}")]
             )
             chain = prompt | self.llm
-            response = chain.invoke({"question": question})
+            response = chain.invoke({"question": question}, **tracing.invoke_kwargs())
             hypothetical = str(response.content).strip()
         except Exception:
             return None
@@ -597,7 +661,7 @@ class GraphRagEngine:
                 [("system", QUERY_REWRITE_SYSTEM_PROMPT), ("human", "{question}")]
             )
             chain = prompt | self.llm
-            response = chain.invoke({"question": question})
+            response = chain.invoke({"question": question}, **tracing.invoke_kwargs())
             keywords_raw = str(response.content).strip()
         except Exception:
             return None
@@ -664,7 +728,7 @@ class GraphRagEngine:
             "expanded_query_context": rewritten_query or "- none",
             "parameter_context": self._parameter_context(matched_specs),
             "evidence_context": self._evidence_context(evidence),
-        })
+        }, **tracing.invoke_kwargs())
         return str(response.content).strip()
 
     @staticmethod
