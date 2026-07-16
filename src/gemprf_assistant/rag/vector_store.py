@@ -282,6 +282,32 @@ class WeaviateHierarchicalStore:
         )
         return self._chunk_hits(response)
 
+    def chunks_by_source_ids(
+        self,
+        query: str,
+        vector: np.ndarray,
+        limit: int,
+        alpha: float,
+        source_ids: tuple[str, ...],
+        source_kinds: tuple[str, ...] | None = None,
+    ) -> list[ChunkHit]:
+        """Hybrid search constrained to chunks from ANY of `source_ids` (curated
+        code-source recall); ranks a source's own chunks so the substantive one wins."""
+        if not source_ids:
+            return []
+        coll = self.client.collections.get(CHUNK_COLLECTION)
+        filters = _and_filters(self._source_filter(source_ids), self._kind_filter(source_kinds))
+        response = coll.query.hybrid(
+            query=query,
+            vector=vector.astype(np.float32).tolist(),
+            alpha=alpha,
+            limit=limit,
+            query_properties=["text"],
+            return_metadata=MetadataQuery(score=True),
+            filters=filters,
+        )
+        return self._chunk_hits(response)
+
     @staticmethod
     def _chunk_hits(response) -> list[ChunkHit]:
         """Parse a chunk hybrid-query response into ordered ChunkHit objects."""
@@ -308,6 +334,12 @@ class WeaviateHierarchicalStore:
         if not parameter_ids:
             return None
         return Filter.by_property("parameter_ids").contains_any(list(parameter_ids))
+
+    @staticmethod
+    def _source_filter(source_ids: tuple[str, ...] | None):
+        if not source_ids:
+            return None
+        return Filter.by_property("source_id").contains_any(list(source_ids))
 
     @staticmethod
     def _kind_filter(source_kinds: tuple[str, ...] | None):

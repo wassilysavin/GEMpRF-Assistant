@@ -52,6 +52,13 @@ _MAX_CITATIONS = 6
 # Min cosine for targeting the refusal fallback by embedding match; keeps off-topic refusals on the matrix.
 _RELATION_FALLBACK_MIN_SCORE = 0.6
 
+# Curated code-source recall: guarantee a confidently-matched parameter's own code reaches the LLM,
+# independent of how the (HyDE/prose) retrieval query happens to rank code chunks for a phrasing.
+_CODE_RECALL_MIN_SCORE = 0.6   # param-match confidence gate (mirrors the fallback gate)
+_CODE_RECALL_POOL = 6          # candidate code chunks fetched from the curated sources
+_CODE_RECALL_MAX = 2           # max code chunks appended as reserved evidence slots
+_CODE_STUB_MAX_TOKENS = 24     # skip trivial stubs (class line, bare __init__) so the logic body wins
+
 
 def _rerank_pool_size() -> int:
     """Cross-encoder rerank pool size (env GEMPRF_ASSISTANT_RERANK_POOL, default 12).
@@ -304,6 +311,10 @@ class GraphRagEngine:
             first_pass, rerank_used = self.reranker.rerank(retrieval_query, first_pass, top_k=rerank_pool)
 
         evidence = self._select_evidence(first_pass, top_k)
+        # Guarantee a confidently-matched parameter's curated code reaches the LLM: organic
+        # retrieval ranks code chunks inconsistently across phrasings. Ranked on the resolved
+        # question (contextual), so the logic body wins over stubs like a bare __init__.
+        evidence = self._inject_code_evidence(evidence, matched_specs, matched_parameter_scores, contextual)
         citations = self._build_citations(evidence, matched_specs)
         if not self._has_supporting_evidence(evidence, rerank_used):
             # Retrieval found nothing, but a matched parameter may carry corpus-grounded
@@ -402,6 +413,48 @@ class GraphRagEngine:
 
     def _select_evidence(self, candidates: list[RetrievedChunk], top_k: int) -> list[RetrievedChunk]:
         return candidates[:top_k]
+
+    def _inject_code_evidence(
+        self,
+        evidence: list[RetrievedChunk],
+        matched_specs: list[ParameterSpec],
+        matched_scores: dict[str, float],
+        query: str,
+    ) -> list[RetrievedChunk]:
+        """Append the top matched parameter's curated code chunk(s) if not already present.
+
+        Fires only when the parameter clears the confidence gate (guards off-topic). Appends
+        rather than reorders, so prose-led top_k — and conceptual answers — stay unchanged; the
+        code is merely made available for the answer prompt to quote when the question wants it.
+        """
+        if os.getenv("GEMPRF_ASSISTANT_CODE_RECALL", "1").strip() == "0" or not matched_specs:
+            return evidence
+        top = matched_specs[0]
+        if matched_scores.get(top.id, 0.0) < _CODE_RECALL_MIN_SCORE:
+            return evidence
+        source_ids = tuple(sid for sid in top.code_source_ids if sid in self.sources)
+        if not source_ids:
+            return evidence
+        _embed_q = getattr(self.embedding_backend, "embed_query", self.embedding_backend.embed_texts)
+        hits = self.vector_store.chunks_by_source_ids(
+            query=query,
+            vector=_embed_q([query])[0],
+            limit=_CODE_RECALL_POOL,
+            alpha=self.retriever.config.hybrid_alpha,
+            source_ids=source_ids,
+        )
+        present = {r.chunk.metadata.chunk_id for r in evidence}
+        injected = 0
+        for hit in hits:
+            if injected >= _CODE_RECALL_MAX:
+                break
+            meta = hit.chunk.metadata
+            if meta.chunk_id in present or meta.token_count <= _CODE_STUB_MAX_TOKENS:
+                continue
+            evidence.append(RetrievedChunk(chunk=hit.chunk, score=float(hit.score)))
+            present.add(meta.chunk_id)
+            injected += 1
+        return evidence
 
     @staticmethod
     def _has_supporting_evidence(evidence: list[RetrievedChunk], rerank_used: bool) -> bool:
