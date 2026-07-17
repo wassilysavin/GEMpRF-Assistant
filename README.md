@@ -115,7 +115,26 @@ CLARIFICATION INTAKE  (wraps analyze() in `ask` and the REPL: when the engine ca
     toggle via GEMPRF_ASSISTANT_RELATIONS.
 ```
 
-## Quickstart
+## Two ways to run it
+
+**Use it** (researcher — no corpus, no build): install the wheel and pull a prebuilt index.
+
+```bash
+uv tool install gemprf-assistant      # or: pipx install gemprf-assistant
+gemprf-assistant snapshot install <url-or-path>   # ~6 MB; skips the 10-20 min local build
+gemprf-assistant ask "What does nDCT do?"
+```
+
+The index and caches live in your OS data dir (`gemprf-assistant config show` prints it) — not in whatever directory you happened to launch from. On first use the preflight benchmarks your machine once; if local inference would be too slow it tells you, and you can switch to the hosted API:
+
+```bash
+export XAI_API_KEY=...
+gemprf-assistant config set llm_provider xai   # persisted; env vars still win
+```
+
+**Develop it** (maintainer — corpus + rebuildable index): clone with submodules and use `run.sh`.
+
+## Quickstart (maintainer)
 
 ```bash
 git clone --recurse-submodules https://github.com/wassilysavin/GEMpRF-Assistant.git
@@ -149,7 +168,9 @@ pip install -e .
 Set one of:
 
 - `OPENAI_API_KEY` or `XAI_API_KEY` — For synthesis + judge.
-- nothing — auto-falls back to Ollama (`ollama pull mistral-nemo:12b && ollama serve`). Force with `GEMPRF_ASSISTANT_LLM_PROVIDER=ollama`.
+- nothing — auto-falls back to Ollama (`ollama pull mistral-nemo:12b && ollama serve`).
+
+Pin the provider explicitly with `gemprf-assistant config set llm_provider ollama|xai|openai` (or `GEMPRF_ASSISTANT_LLM_PROVIDER` for a one-off).
 
 #### Run
 
@@ -172,12 +193,30 @@ export LANGFUSE_HOST=https://cloud.langfuse.com   # or your self-hosted instance
 
 With the keys set, `ask`/`repl`/`debug` print a per-answer trace URL, `ask --json` includes it as `trace_url`, and eval runs tag each case (`eval:<id>`) and link its trace in the `.review.md` report. Without the keys (or with `GEMPRF_ASSISTANT_TRACING=0`) tracing is a hard no-op.
 
-#### Paths (installed / non-checkout use)
+#### Settings and paths
 
-The package is relocatable: install the wheel anywhere and point it at data via env vars. From a source checkout both default to the repo automatically.
+Precedence is **env var > user config file > default**. The config file holds the choices a user pins for good (`llm_provider`, `ollama_model`, `xai_model`, `model`, `embedding_model`); everything else stays an env knob. API keys are read from the environment / `.env` only, never persisted by the CLI.
+
+```bash
+gemprf-assistant config show                   # effective settings + where each came from
+gemprf-assistant config set llm_provider xai
+gemprf-assistant config path                   # where it is stored
+```
+
+Paths resolve automatically: a source checkout uses `<repo>/data`, an installed wheel uses the OS user-data dir. Override either explicitly:
 
 - `GEMPRF_ASSISTANT_CORPUS_DIR` — root holding `external/` and `datasets/` (default: the checkout root, else the current directory).
-- `GEMPRF_ASSISTANT_DATA_DIR` — runtime state: Weaviate index, `kg.ttl`, caches (default: `./data`).
+- `GEMPRF_ASSISTANT_DATA_DIR` — runtime state: Weaviate index, `kg.ttl`, `index_manifest.json`, caches.
+- `GEMPRF_ASSISTANT_CONFIG_FILE` — the user config file location.
+
+#### Index builds
+
+`index build` writes an `index_manifest.json` recording the embedder, vector dimension, corpus hash, and chunking version. Startup verifies it and fails fast if the configured embedder no longer matches the one that built the index, instead of silently searching incompatible vectors.
+
+```bash
+gemprf-assistant index build            # build from the corpus (maintainer checkout)
+gemprf-assistant index build --force    # rebuild an existing index
+```
 
 #### Prebuilt index snapshot
 
@@ -185,11 +224,11 @@ Installed users don't need the corpus or an ingest run — install a prebuilt in
 
 ```bash
 pip install gemprf-assistant
-gemprf-assistant snapshot install <url-or-path>   # ~6 MB tar.gz into ./data (or GEMPRF_ASSISTANT_DATA_DIR)
+gemprf-assistant snapshot install <url-or-path>   # ~6 MB tar.gz into the data dir
 gemprf-assistant ask "What does nDCT do?"
 ```
 
-Queries must use the same embedding backend that built the index; `snapshot install` prints it from the snapshot manifest.
+The snapshot carries its manifest, and `install` refuses a snapshot built with a different embedding backend than the one you have configured (pass `--force` to override).
 
 To publish a snapshot from a checkout with a built index (stop any running assistant first):
 

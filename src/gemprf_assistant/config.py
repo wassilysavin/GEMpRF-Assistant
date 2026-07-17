@@ -1,23 +1,53 @@
 """Central typed settings: every GEMPRF_ASSISTANT_* env var is declared, parsed, and defaulted here.
 
-Call get_settings() at use time (it re-reads the environment, so tests can monkeypatch);
+Precedence is env var > user config file (`gemprf-assistant config set`) > default.
+Call get_settings() at use time (it re-reads both, so tests can monkeypatch);
 long-lived components may hold onto one Settings instance for a consistent view.
 """
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from .paths import corpus_root, data_dir  # noqa: F401  (re-exported: config is the one import site for paths)
+from .paths import (  # noqa: F401  (re-exported: config is the one import site for paths)
+    corpus_root,
+    data_dir,
+    user_config_path,
+)
 
 _PREFIX = "GEMPRF_ASSISTANT_"
 
+# Keys accepted in the user config file: the ones a first-run user legitimately pins.
+# Everything else stays env-only (tuning knobs, not user choices).
+USER_CONFIG_KEYS = ("llm_provider", "ollama_model", "xai_model", "model", "embedding_model")
+
+
+def _user_config() -> dict[str, str]:
+    """The persisted user choices; unreadable or malformed files are ignored (env/defaults still work)."""
+    try:
+        data = json.loads(user_config_path().read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    return {k: str(v) for k, v in data.items() if k in USER_CONFIG_KEYS and v is not None}
+
+
+def _lookup(name: str) -> str | None:
+    """Env var, else the user config file, else None."""
+    value = os.getenv(_PREFIX + name)
+    if value is not None:
+        return value
+    return _user_config().get(name.lower())
+
 
 def _str(name: str, default: str = "") -> str:
-    return os.getenv(_PREFIX + name, default)
+    value = _lookup(name)
+    return default if value is None else value
 
 
 def _opt(name: str) -> str | None:
-    value = os.getenv(_PREFIX + name)
+    value = _lookup(name)
     return value if value else None
 
 
@@ -126,6 +156,9 @@ class Settings:
 
     def resolved_weaviate_path(self) -> str:
         return self.weaviate_path or str(data_dir() / "weaviate")
+
+    def corpus_root_path(self) -> Path:
+        return corpus_root()
 
     def resolved_kg_path(self) -> Path:
         return Path(self.kg_path) if self.kg_path else data_dir() / "kg.ttl"

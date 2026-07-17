@@ -17,6 +17,7 @@ except ImportError:
     pass
 
 from . import tracing  # noqa: E402  (env setup above must precede package imports)
+from .config import USER_CONFIG_KEYS  # noqa: E402
 from .evaluation import evaluate, format_table, load_eval_set  # noqa: E402
 from .pipeline.engine import GraphRagEngine  # noqa: E402
 
@@ -92,6 +93,51 @@ def _print_analysis(analysis) -> None:
             print(f"- [{item.source_id}] {heading} (score={item.score:.3f})\n  {preview}")
 
 
+def _run_config_command(args) -> None:
+    """show / path / set for the persisted user settings (no engine, no network)."""
+    from .config import USER_CONFIG_KEYS, _user_config, get_settings
+    from .paths import data_dir, user_config_path
+
+    path = user_config_path()
+    if args.config_command == "path":
+        print(path)
+        return
+
+    if args.config_command == "set":
+        key = args.key.lower()
+        if key not in USER_CONFIG_KEYS:
+            raise SystemExit(f"Unknown key '{args.key}'. Settable keys: {', '.join(USER_CONFIG_KEYS)}")
+        stored = _user_config()
+        if args.value == "":
+            stored.pop(key, None)
+        else:
+            stored[key] = args.value
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(stored, indent=2, sort_keys=True) + "\n")
+        print(f"{'Unset' if args.value == '' else 'Set'} {key} in {path}")
+        if os.getenv("GEMPRF_ASSISTANT_" + key.upper()):
+            print(f"note: the environment still sets GEMPRF_ASSISTANT_{key.upper()}, which takes precedence.")
+        return
+
+    stored = _user_config()
+    settings = get_settings()
+    print(f"config file: {path}{'' if path.exists() else '  (not created yet)'}")
+    print(f"data dir:    {data_dir()}")
+    print(f"corpus root: {settings.corpus_root_path()}\n")
+    print(f"{'setting':<18}{'value':<34}source")
+    for key in USER_CONFIG_KEYS:
+        value = getattr(settings, key if key != "model" else "openai_model", None)
+        if os.getenv("GEMPRF_ASSISTANT_" + key.upper()):
+            source = "env"
+        elif key in stored:
+            source = "config file"
+        else:
+            source = "default"
+        print(f"{key:<18}{str(value or '(unset)'):<34}{source}")
+    provider = settings.resolve_llm_provider()
+    print(f"\nresolved LLM provider: {provider or '(none available)'}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="GEM-pRF Graph-RAG CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -122,6 +168,14 @@ def main() -> None:
     build_parser = index_sub.add_parser("build", help="Chunk + embed the corpus into Weaviate and rebuild kg.ttl")
     build_parser.add_argument("--force", action="store_true", help="Rebuild even when an index already exists")
 
+    config_parser = subparsers.add_parser("config", help="Show or set persisted settings (e.g. the LLM provider)")
+    config_sub = config_parser.add_subparsers(dest="config_command", required=True)
+    config_sub.add_parser("show", help="Print the effective settings and where they came from")
+    config_sub.add_parser("path", help="Print the user config file path")
+    set_parser = config_sub.add_parser("set", help="Persist a setting for this user")
+    set_parser.add_argument("key", help=f"one of: {', '.join(USER_CONFIG_KEYS)}")
+    set_parser.add_argument("value", help="the value to persist (use an empty string to unset)")
+
     snapshot_parser = subparsers.add_parser("snapshot", help="Pack or install a prebuilt index snapshot")
     snapshot_sub = snapshot_parser.add_subparsers(dest="snapshot_command", required=True)
     pack_parser = snapshot_sub.add_parser("pack", help="Archive the current index (stop any running assistant first)")
@@ -131,6 +185,11 @@ def main() -> None:
     install_parser.add_argument("--force", action="store_true", help="Replace an existing index")
 
     args = parser.parse_args()
+
+    # config commands touch no models, index, or network.
+    if args.command == "config":
+        _run_config_command(args)
+        return
 
     if args.command == "index":
         engine = GraphRagEngine(auto_ingest=False, reranker=False, llm=False)

@@ -16,8 +16,8 @@ MIN_RAM_GB = 8.0
 _BENCH_PROMPT = "Briefly explain what a population receptive field is."
 _BENCH_TOKENS = 64
 _SUGGESTION = (
-    "use the chat on the GEM-pRF website (https://gemprf.github.io) or set XAI_API_KEY "
-    "(and GEMPRF_ASSISTANT_LLM_PROVIDER=xai) to answer via the xAI API instead."
+    "use the chat on the GEM-pRF website (https://gemprf.github.io), or answer via the xAI API "
+    "instead: set XAI_API_KEY and run `gemprf-assistant config set llm_provider xai`."
 )
 
 

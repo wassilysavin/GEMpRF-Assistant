@@ -11,7 +11,8 @@ from ..paths import data_dir
 MANIFEST_NAME = "index_manifest.json"
 SCHEMA_VERSION = 1
 # Bump when chunking changes chunk boundaries or ids (forces a rebuild prompt).
-CHUNKING_VERSION = 1
+# 2: source headers carry the corpus-relative path, not the absolute one.
+CHUNKING_VERSION = 2
 
 logger = get_logger(__name__)
 

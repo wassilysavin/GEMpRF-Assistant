@@ -18,6 +18,14 @@ def _path(relative_path: str) -> str:
     return str((ROOT / relative_path).resolve())
 
 
+def _relative_to_corpus(path: Path) -> str:
+    """Path as written in chunk text: relative to the corpus root when inside it, else the bare name."""
+    try:
+        return path.resolve().relative_to(ROOT.resolve()).as_posix()
+    except ValueError:
+        return path.name
+
+
 class _SourceModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str
@@ -241,7 +249,9 @@ def ensure_local_sources_exist() -> None:
 def _load_local_document(source: SourceMeta) -> Document:
     path = Path(source.local_path or "")
     text = path.read_text(encoding="utf-8")
-    header = f"{source.title}\nSource type: {source.kind}\nLocal path: {path}\n"
+    # Corpus-relative, never absolute: an absolute path would bake this machine's home directory
+    # into the embedded chunk text, making chunk ids (and shipped snapshots) machine-dependent.
+    header = f"{source.title}\nSource type: {source.kind}\nLocal path: {_relative_to_corpus(path)}\n"
     if source.description:
         header += f"Description: {source.description}\n"
     return Document(page_content=f"{header}\n{text}", metadata={"source_id": source.id})
