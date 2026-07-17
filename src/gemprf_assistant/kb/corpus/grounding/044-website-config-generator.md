@@ -1,0 +1,4 @@
+---
+source: website.config_generator
+---
+Binarization in GEM-pRF. The configurator's Binarization toggle (XML: /root/stimulus/binarization/@enable, paired with /root/stimulus/binarization/@threshold) controls whether the loaded stimulus is binarised after read. When @enable="True", the stimulus loader (gem.model.prf_stimulus.PRFStimulus.__init__) first checks whether the loaded array already contains only 0 and 1; if it does, no transformation is applied. If the stimulus contains other values, the loader logs a yellow warning ('Warning: Stimulus data contains values other than 0 and 1. Binarizing...') and converts the array element-wise: every value strictly greater than @threshold is set to 1, every other value is set to 0, and the array is cast to numpy uint8. When @enable="False", the stimulus is loaded unchanged regardless of @threshold. @threshold is parsed as a float; the sample config default is 0, which means any value greater than 0 becomes 1.

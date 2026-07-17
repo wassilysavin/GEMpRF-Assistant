@@ -1,0 +1,4 @@
+---
+source: website.config_generator
+---
+Which pRF models GEM-pRF supports, and which you can select. GEM-pRF currently implements only the 2D Gaussian model, and it is the only value the runtime accepts and the only option the Configuration Generator's pRF Model field can actually select. Difference of Gaussians (DoG) and CSS also appear in the pRF Model dropdown and in the model enum, but both are marked 'not available at the moment': DoG is an unimplemented stub and CSS has no implementation, so neither can currently be selected. Use this rule for 'is X supported by the pRF model?' questions: the plain case of a single round receptive field with a centre and one size is supported by the 2D Gaussian; any property the 2D Gaussian lacks is not supported today and would require the alternative DoG or CSS models, which are listed in the configurator but not yet available to select.

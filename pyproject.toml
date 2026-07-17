@@ -13,6 +13,7 @@ dependencies = [
   "langchain>=0.3",
   "langchain-openai>=0.3",
   "pydantic>=2.7",
+  "pyyaml>=6.0",
   "rdflib>=7.0",
   "sentence-transformers>=3.0",
   "weaviate-client>=4.9",
@@ -40,6 +41,9 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+gemprf_assistant = ["kb/corpus/*.yaml", "kb/corpus/grounding/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -6,6 +6,7 @@ import numpy as np
 from ..models import ParameterSpec, SourceMeta
 from .chunking import ChunkingConfig, split_documents
 from .knowledge_graph import ChunkTriple, KnowledgeGraphStore
+from .manifest import corpus_sha, write_manifest
 
 _BREADCRUMB_TOKEN_LIMIT = 80
 
@@ -78,6 +79,14 @@ def build_index(
         chunks=triples,
     )
     knowledge_graph.save()
+    write_manifest(
+        embedder=embedding_backend.backend_name,
+        embedding_dim=int(chunk_vectors.shape[1]) if len(chunks) else 0,
+        corpus_hash=corpus_sha(documents),
+        doc_count=len(doc_pairs),
+        chunk_count=len(chunks),
+        section_count=len(parents),
+    )
     return {
         "chunks": len(chunks),
         "sections": len(parents),

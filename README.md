@@ -154,7 +154,7 @@ Set one of:
 #### Run
 
 ```bash
-python scripts/ingest.py                  
+python -m gemprf_assistant.cli index build   # or: scripts/ingest.py                  
 python -m gemprf_assistant.cli ask "What does nDCT do?"
 python -m gemprf_assistant.cli repl       # interactive; follow-ups resolve via conversation history
 # python -m gemprf_assistant.cli eval       

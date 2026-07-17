@@ -1,0 +1,178 @@
+# Curated GEM-pRF sources; local_path is relative to the corpus root.
+- id: paper.abstract
+  title: GEM-pRF paper abstract
+  kind: paper
+  url: https://doi.org/10.1016/j.media.2025.103891
+  description: 'Paper metadata and abstract for GEM-pRF. It describes the core claim: a GLM reformulation,
+    direct derivative computation, removal of iterative refinement bottlenecks, and much faster pRF estimation.'
+- id: paper.full
+  title: GEM-pRF full paper (Mittal et al., Medical Image Analysis 2026)
+  kind: paper
+  url: https://doi.org/10.1016/j.media.2025.103891
+  local_path: external/paper/gemprf_paper.md
+  description: Full text of the GEM-pRF paper including abstract, introduction (retinotopic mapping background
+    and visual areas V1, V2, VP, V3, V4), methods (GLM reformulation, coarse fitting, quadratic refinement,
+    sampling space, multi-GPU, data), validation against iterative refinement, comparison with mrVista,
+    retinotopic maps, and performance analysis.
+- id: website.quickstart
+  title: GEM-pRF website quickstart
+  kind: website
+  url: https://gemprf.github.io/
+  local_path: external/docs/index.md
+  description: Project overview and quickstart positioning GEM-pRF as a standalone tool for pRF mapping.
+- id: website.installation
+  title: GEM-pRF installation page
+  kind: website
+  url: https://gemprf.github.io/installation.html
+  local_path: external/docs/installation.md
+  description: Install guidance showing GEM-pRF depends on NVIDIA GPU, CUDA, and CuPy.
+- id: website.running
+  title: GEM-pRF running guide
+  kind: website
+  url: https://gemprf.github.io/running.html
+  local_path: external/docs/running.md
+  description: 'Three ways to run GEM-pRF: gp.run() from Python (recommended), run_gem.py entry script,
+    or an IDE.'
+- id: website.configuration
+  title: GEM-pRF configuration docs
+  kind: website
+  url: https://gemprf.github.io/configuration.html
+  local_path: external/docs/configuration.md
+  description: Website guidance that GEM-pRF is driven by XML configuration files and run through gp.run(config.xml).
+- id: website.config_generator
+  title: GEM-pRF configuration generator
+  kind: website
+  url: https://gemprf.github.io/gemprf-configs/config_generator.html
+  local_path: external/docs/gemprf-configs/config_generator.md
+  description: Public generator listing available XML parameters and their UI labels.
+- id: website.input_sources
+  title: GEM-pRF input source tutorial
+  kind: website
+  url: https://gemprf.github.io/tutorials/input-source-tutorials/input-source-selection-tutorial.html
+  local_path: external/docs/tutorials/input-source-selection-tutorial.md
+  description: Tutorial describing BIDS and fixed-path input modes plus example data setups.
+- id: website.download
+  title: GEM-pRF download page
+  kind: website
+  url: https://gemprf.github.io/download_gemprf.html
+  local_path: external/docs/download_gemprf.md
+  description: 'Download instructions: PyPI install, source-code option, and a sample-config download.'
+- id: website.cite
+  title: GEM-pRF citation page
+  kind: website
+  url: https://gemprf.github.io/cite.html
+  local_path: external/docs/cite.md
+  description: Citation guidance for the paper, the documentation Zenodo DOI, and the PyPI version.
+- id: website.team
+  title: GEM-pRF team page
+  kind: website
+  url: https://gemprf.github.io/team.html
+  local_path: external/docs/team.md
+  description: Team roster (Mittal, Woletz, Linhardt, Windischberger) and Windischberger Lab credit.
+- id: website.support
+  title: GEM-pRF support page
+  kind: website
+  url: https://gemprf.github.io/support.html
+  local_path: external/docs/support.md
+  description: Support form and pre-contact pointers to installation/running/configuration/tutorials docs.
+- id: website.tutorials_index
+  title: GEM-pRF tutorials index
+  kind: website
+  url: https://gemprf.github.io/tutorials.html
+  local_path: external/docs/tutorials.md
+  description: Top-level tutorials landing page (currently a work-in-progress index).
+- id: website.search
+  title: GEM-pRF search page
+  kind: website
+  url: https://gemprf.github.io/search.html
+  local_path: external/docs/search.md
+  description: Site search entry point.
+- id: website.tutorial.config_file
+  title: GEM-pRF tutorial — configuration file
+  kind: website
+  url: https://gemprf.github.io/tutorials/config-tutorials/config_file.html
+  local_path: external/docs/tutorials/config-tutorials/config_file.md
+  description: Tutorial on the XML config file workflow with gp.run() and links to generator/archive.
+- id: website.tutorial.grid_or_refine_fit
+  title: GEM-pRF tutorial — grid or refine fit
+  kind: website
+  url: https://gemprf.github.io/tutorials/fitting-tutorials/grid-or-refine-fit.html
+  local_path: external/docs/tutorials/fitting-tutorials/grid-or-refine-fit.md
+  description: Tutorial comparing grid-only vs grid+refine fitting strategies and the matching XML knobs.
+- id: website.config_archive_index
+  title: GEM-pRF configuration archive index
+  kind: website
+  url: https://gemprf.github.io/gemprf-configs/list-configs-archive.html
+  local_path: external/docs/gemprf-configs/list-configs-archive.md
+  description: Index of versioned sample configurations for older GEM-pRF releases.
+- id: website.config_archive.v0_1_10
+  title: GEM-pRF v0.1.10 archived sample config
+  kind: config
+  url: https://gemprf.github.io/assets/gemprf_config/config-archive/v0.1.10_sample_config.xml
+  local_path: external/docs/gemprf-configs/config-archive/v0.1.10_sample_config.xml
+  description: Sample XML configuration shipped with GEM-pRF v0.1.10 (archived release).
+- id: website.config_archive.v0_1_11
+  title: GEM-pRF v0.1.11 archived sample config
+  kind: config
+  url: https://gemprf.github.io/assets/gemprf_config/config-archive/v0.1.11_sample_config.xml
+  local_path: external/docs/gemprf-configs/config-archive/v0.1.11_sample_config.xml
+  description: Sample XML configuration shipped with GEM-pRF v0.1.11 (archived release).
+- id: repo.readme
+  title: GEMpRF-DemoKit README
+  kind: repo
+  local_path: external/GEMpRF-DemoKit/README.md
+  description: DemoKit overview with sample configs and GPU memory utility notes.
+- id: repo.sample_config
+  title: GEMpRF-DemoKit sample_config.xml
+  kind: repo
+  local_path: external/GEMpRF-DemoKit/sample_configs/sample_config.xml
+  description: Sample GEM-pRF XML config used as an example of real parameter values.
+- id: repo.gpu_info
+  title: GEMpRF-DemoKit gpu_info utility
+  kind: repo
+  local_path: external/GEMpRF-DemoKit/utils/gpu_info.py
+  description: Demo utility that estimates GPU memory capacity from grid size, stimulus size, and dtype.
+- id: code.config_manager
+  title: gem.configs.config_manager
+  kind: code
+  local_path: external/pypi/gemprf_wheel/gem/configs/config_manager.py
+  description: XML parsing logic that turns config attributes into runtime configuration fields.
+- id: code.init_setup
+  title: gem.init_setup
+  kind: code
+  local_path: external/pypi/gemprf_wheel/gem/init_setup.py
+  description: Setup flow that validates config version, manages CUDA_VISIBLE_DEVICES, and builds the
+    pRF space.
+- id: code.run_analysis
+  title: gem.run.run_gem_prf_analysis
+  kind: code
+  local_path: external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py
+  description: Main analysis code that loads stimulus, HRF, search space, orthogonalization matrix, and
+    fitting flow.
+- id: code.prf_stimulus
+  title: gem.model.prf_stimulus
+  kind: code
+  local_path: external/pypi/gemprf_wheel/gem/model/prf_stimulus.py
+  description: Stimulus handling code covering binarization, resampling, HRF convolution, and high temporal
+    resolution metadata.
+- id: code.orthogonalization
+  title: gem.signals.orthogonalization_matrix
+  kind: code
+  local_path: external/pypi/gemprf_wheel/gem/signals/orthogonalization_matrix.py
+  description: Implementation of the orthogonalization matrix driven by nDCT.
+- id: code.hrf_generator
+  title: gem.signals.hrf_generator
+  kind: code
+  local_path: external/pypi/gemprf_wheel/gem/signals/hrf_generator.py
+  description: SPM-style HRF function used by GEM-pRF.
+- id: code.signal_synthesizer
+  title: gem.signals.signal_synthesizer
+  kind: code
+  local_path: external/pypi/gemprf_wheel/gem/signals/signal_synthesizer.py
+  description: GPU signal generation code that shows how signal counts and high temporal downsampling
+    affect compute.
+- id: code.bids_handler
+  title: gem.data.bids_handler
+  kind: code
+  local_path: external/pypi/gemprf_wheel/gem/data/bids_handler.py
+  description: BIDS input resolution logic including input_file_extension validation and result path rules.

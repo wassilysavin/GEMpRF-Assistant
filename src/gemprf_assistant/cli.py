@@ -117,6 +117,11 @@ def main() -> None:
     eval_parser.add_argument("--no-judge", action="store_true")
     eval_parser.add_argument("--json", action="store_true")
 
+    index_parser = subparsers.add_parser("index", help="Build or rebuild the local index from the corpus")
+    index_sub = index_parser.add_subparsers(dest="index_command", required=True)
+    build_parser = index_sub.add_parser("build", help="Chunk + embed the corpus into Weaviate and rebuild kg.ttl")
+    build_parser.add_argument("--force", action="store_true", help="Rebuild even when an index already exists")
+
     snapshot_parser = subparsers.add_parser("snapshot", help="Pack or install a prebuilt index snapshot")
     snapshot_sub = snapshot_parser.add_subparsers(dest="snapshot_command", required=True)
     pack_parser = snapshot_sub.add_parser("pack", help="Archive the current index (stop any running assistant first)")
@@ -126,6 +131,16 @@ def main() -> None:
     install_parser.add_argument("--force", action="store_true", help="Replace an existing index")
 
     args = parser.parse_args()
+
+    if args.command == "index":
+        engine = GraphRagEngine(auto_ingest=False, reranker=False, llm=False)
+        try:
+            if engine._is_populated() and not args.force:
+                raise SystemExit("Index already exists; pass --force to rebuild it from the corpus.")
+            print(json.dumps(engine.ingest(), indent=2))
+        finally:
+            engine.close()
+        return
 
     # Snapshot commands must run without booting the engine (no index may exist yet).
     if args.command == "snapshot":

@@ -1,0 +1,4 @@
+---
+source: website.config_generator
+---
+Additional Available GPUs in GEM-pRF. The configurator's Additional Available GPUs field (XML: /root/gpu/additional_available_gpus, populated as one or more <gpu> child elements) lists extra GPU device IDs to use alongside the Default GPU. At runtime gem.init_setup.manage_gpus parses the listed IDs, removes any duplicate of the Default GPU ID, sorts the rest, validates that every ID is in [0, max_available_gpus-1], and exports the combined set via os.environ['CUDA_VISIBLE_DEVICES']. If validation fails the error path falls back to using all detected GPUs. With more than one GPU ID exposed, gem.signals.signal_synthesizer.SignalSynthesizer.compute_signals_batches loops over GPU indices and dispatches per-GPU batches of the model-signal computation; with a single ID the loop runs once on that GPU.

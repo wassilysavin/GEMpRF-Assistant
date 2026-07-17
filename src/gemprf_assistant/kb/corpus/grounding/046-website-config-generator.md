@@ -1,0 +1,4 @@
+---
+source: website.config_generator
+---
+Stimulus Directory and Visual Field Radius in GEM-pRF. The stimulus geometry section groups three fields: /root/stimulus/directory (filesystem path; the loader source comment states 'The file paths are resolved relative to the current Python script file instead of the current working directory (cwd)' and the code calls os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_file_path)), /root/stimulus/visual_field (the half-width of the stimulus coordinate range in degrees of visual angle; the loader uses this to build a symmetric coordinate grid from -visual_field to +visual_field along both axes via np.linspace), and /root/stimulus/width and /root/stimulus/height (the resampled stimulus pixel grid). The /root/stimulus@comment attribute notes 'Only in Nifti Format'.

@@ -30,7 +30,7 @@ def pack(out: str | None = None) -> Path:
         pkg_version = version("GEMpRF-Assistant")
     except PackageNotFoundError:
         pkg_version = "unknown"
-    contents = ["weaviate"] + (["kg.ttl"] if (root / "kg.ttl").exists() else [])
+    contents = ["weaviate"] + [n for n in ("kg.ttl", "index_manifest.json") if (root / n).exists()]
     manifest = {
         "format": 1,
         "package_version": pkg_version,
@@ -74,6 +74,14 @@ def install(source: str, force: bool = False) -> dict:
             _safe_extract(tar, staged)
         manifest_path = staged / MANIFEST_NAME
         manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+        # Refuse an embedder-incompatible snapshot up front (the index would search garbage vectors).
+        snap_backend = manifest.get("embedding_backend", "unknown")
+        local_backend = _backend_name()
+        if not force and "unknown" not in (snap_backend, local_backend) and snap_backend != local_backend:
+            raise SystemExit(
+                f"Snapshot was built with embedding backend '{snap_backend}' but this machine is "
+                f"configured for '{local_backend}'. Configure the matching backend or pass --force."
+            )
         items = [p for p in staged.iterdir() if p.name != MANIFEST_NAME]
         clashes = [str(root / p.name) for p in items if (root / p.name).exists()]
         if clashes and not force:

@@ -1,0 +1,4 @@
+---
+source: website.config_generator
+---
+Refine Fitting in GEM-pRF. The configurator's Refine Fitting toggle maps to /root/refine_fitting/@enable. When True, after the coarse-fit grid stage the run flow selects GridFit.get_error_terms (refinement-aware, computing both the projection and gradient terms) instead of GridFit.get_only_error_terms; the analysis then runs the single-step quadratic refinement that the GEM-pRF paper describes (Section 2.1.2.1) to produce refined (μx, μy, σ) per voxel. When False, the analysis stops at coarse-fit grid matching and returns the best grid candidate as the final estimate. The companion attribute /root/refine_fitting/@refinefit_on_gpu, when True, keeps the refinement-stage error terms and derivative products on GPU; the run flow gates this by checking (cfg.is_refinefit_on_gpu & cfg.refine_fitting_enabled). When refine_fitting is disabled, refinefit_on_gpu has no effect.

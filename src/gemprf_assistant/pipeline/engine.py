@@ -69,6 +69,10 @@ class GraphRagEngine:
             self.ingest()
         elif not self.knowledge_graph.load():
             self.ingest()
+        else:
+            from ..kb.manifest import verify_compatible
+
+            verify_compatible(self.embedding_backend.backend_name)
 
     @property
     def documents(self):

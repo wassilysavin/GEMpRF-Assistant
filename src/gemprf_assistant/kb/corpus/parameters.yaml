@@ -1,0 +1,460 @@
+# The 22 curated GEM-pRF parameter specs (xml_path = location in the config XML).
+- id: refine_fitting.enable
+  label: Enable Refine Fitting
+  aliases:
+  - refine fitting
+  - refine_fitting
+  - refine_fitting enable
+  - enable refine fitting
+  xml_path: /root/refine_fitting/@enable
+  summary: Turns derivative-based refinement on after the coarse grid stage.
+  significance: When enabled, GEM-pRF computes derivative signals and uses them in the fitting flow instead
+    of stopping at coarse grid matching.
+  impacts:
+  - The analysis computes derivative signal batches only when refinement is enabled.
+  - Refinement adds compute and memory pressure because more model terms are generated and used.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.config_manager
+  - code.run_analysis
+- id: refine_fitting.refinefit_on_gpu
+  label: Execute Refine Fitting On GPU
+  aliases:
+  - refinefit_on_gpu
+  - refine on gpu
+  - refine fitting on gpu
+  xml_path: /root/refine_fitting/@refinefit_on_gpu
+  summary: Controls whether refinement calculations stay on GPU when refinement is enabled.
+  significance: It changes where error terms and refinement-related arrays are kept during the refine
+    stage.
+  impacts:
+  - If refinement is enabled and this flag is true, GEM keeps refinement-side computations on GPU.
+  - This can reduce data movement but depends on available GPU memory.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.config_manager
+  - code.run_analysis
+- id: stimulus.visual_field
+  label: Stimulus Visual Field
+  aliases:
+  - stimulus visual field
+  - visual_field
+  - stimulus visual_field
+  - stimulus radius
+  xml_path: /root/stimulus/visual_field
+  summary: Defines the stimulus coordinate range in degrees used when loading and resampling the stimulus.
+  significance: The stimulus object builds x and y ranges from minus visual_field to plus visual_field,
+    so this parameter sets the stimulus-space geometry.
+  impacts:
+  - Changing it changes the stimulus coordinate axes used when generating model signals.
+  - It is distinct from the search-space visual_field_radius used for pRF grid sampling.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.run_analysis
+  - code.prf_stimulus
+- id: stimulus.width
+  label: Stimulus Width
+  aliases:
+  - width
+  - stimulus width
+  xml_path: /root/stimulus/width
+  summary: Sets the resampled stimulus width.
+  significance: GEM resamples the loaded stimulus to the configured width before HRF convolution and later
+    uses width in signal synthesis memory calculations.
+  impacts:
+  - Larger width increases the flattened model-curve size used in GPU signal computation.
+  - Together with height, it changes both memory load and effective stimulus resolution.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.run_analysis
+  - code.prf_stimulus
+  - code.signal_synthesizer
+  - repo.gpu_info
+- id: stimulus.height
+  label: Stimulus Height
+  aliases:
+  - height
+  - stimulus height
+  xml_path: /root/stimulus/height
+  summary: Sets the resampled stimulus height.
+  significance: Like width, height changes the resampled stimulus geometry and the amount of per-signal
+    pixel work during GPU signal generation.
+  impacts:
+  - Larger height increases stimulus pixel count and memory use.
+  - Height works jointly with width in GPU buffer sizing and signal generation.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.run_analysis
+  - code.prf_stimulus
+  - code.signal_synthesizer
+  - repo.gpu_info
+- id: stimulus.binarization.threshold
+  label: Binarization Threshold
+  aliases:
+  - binarization
+  - threshold
+  - binarization threshold
+  - stimulus threshold
+  xml_path: /root/stimulus/binarization/@threshold
+  summary: Threshold used when stimulus binarization is enabled.
+  significance: If the loaded stimulus is not already binary, GEM converts values strictly above threshold
+    to 1 and all other values (including equal-to-threshold) to 0.
+  impacts:
+  - It changes the stimulus values before resampling and HRF convolution.
+  - Its effect only matters when binarization is enabled and the input contains non-binary values.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.run_analysis
+  - code.prf_stimulus
+- id: stimulus.high_temporal_resolution.num_frames_downsampled
+  label: Number of Downsampled Frames
+  aliases:
+  - num_frames_downsampled
+  - downsampled frames
+  - number of downsampled frames
+  xml_path: /root/stimulus/high_temporal_resolution/@num_frames_downsampled
+  summary: Target number of frames after high-temporal stimulus signals are downsampled.
+  significance: In high temporal resolution mode GEM computes signals at the high-res stimulus rate, then
+    samples them down to this length.
+  impacts:
+  - If the requested downsampled length exceeds the available frames, GEM aborts with an error.
+  - This parameter changes the time dimension used later in fitting and orthogonalization.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.config_manager
+  - code.prf_stimulus
+  - code.signal_synthesizer
+  - code.run_analysis
+- id: stimulus.high_temporal_resolution.slice_time_ref
+  label: Slice Time Reference
+  aliases:
+  - slice_time_ref
+  - slice time reference
+  xml_path: /root/stimulus/high_temporal_resolution/@slice_time_ref
+  summary: Reference offset used when selecting downsampled indices from a high-temporal stimulus.
+  significance: GEM computes downsample indices and then shifts them by an amount derived from the mean
+    index step times slice_time_ref.
+  impacts:
+  - It changes which high-resolution frames are sampled into the downsampled signal.
+  - Its effect is limited to the high temporal resolution branch.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.config_manager
+  - code.prf_stimulus
+  - code.signal_synthesizer
+- id: input.BIDS.run_type
+  label: BIDS Run Type
+  aliases:
+  - run_type
+  - bids run type
+  xml_path: /root/input_datasrc/BIDS/@run_type
+  summary: Selects whether BIDS input analysis is run per input or over concatenated blocks.
+  significance: The BIDS handler branches on this value to either collect individual matching files or
+    iterate through concatenate_item blocks.
+  impacts:
+  - Individual mode resolves a flat list of matching files.
+  - Concatenated mode builds grouped blocks and drives task-specific stimulus handling.
+  source_ids:
+  - website.config_generator
+  - website.input_sources
+  - repo.sample_config
+  code_source_ids:
+  - code.bids_handler
+  enum_values:
+  - individual
+  - concatenated
+- id: input.BIDS.input_file_extension
+  label: Input File Extension
+  aliases:
+  - input_file_extension
+  - file extension
+  xml_path: /root/input_datasrc/BIDS/input_file_extension
+  summary: Restricts BIDS matching to surface files, volume files, or both.
+  significance: The BIDS handler validates this field and only accepts .nii.gz, .gii, or both.
+  impacts:
+  - An unsupported value causes GEM to abort with a validation error.
+  - The choice determines which input files are searched and later processed.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.bids_handler
+  enum_values:
+  - .nii.gz
+  - .gii
+  - both
+- id: input.BIDS.space
+  label: Space
+  aliases:
+  - space
+  - output space
+  - surface space
+  - reference space
+  xml_path: /root/input_datasrc/BIDS/space
+  summary: Selects the spatial reference of BIDS-derived input files to load (FreeSurfer subject surface,
+    fsaverage group surface, T1w volume, or all available).
+  significance: The BIDS handler uses this to filter derivatives to the requested space; selecting 'all'
+    overrides the per-subject choice and loads every available space.
+  impacts:
+  - fsnative loads each subject's own surface; fsaverage loads the group-averaged surface; T1w loads volumetric
+    files; 'all' processes every available variant.
+  - Selecting a space the derivatives don't contain produces an empty input set.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.bids_handler
+  enum_values:
+  - fsnative
+  - fsaverage
+  - T1w
+  - all
+- id: measured_data.batches
+  label: Batches
+  aliases:
+  - batches
+  - measured data batches
+  xml_path: /root/measured_data/batches
+  summary: Controls how observed signals are split into batches during fitting.
+  significance: The analysis computes batch_size from total signal count divided by this config value.
+  impacts:
+  - Increasing the number of batches generally makes each fitting batch smaller.
+  - Very small batch sizes can trade throughput for lower per-batch memory pressure.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.run_analysis
+- id: gpu.default_gpu
+  label: Default GPU
+  aliases:
+  - default_gpu
+  - default gpu
+  xml_path: /root/gpu/default_gpu
+  summary: Primary GPU selected by the user in the XML.
+  significance: During setup GEM uses this field to build CUDA_VISIBLE_DEVICES and then maps GEM's internal
+    default device to index 0 of that filtered list.
+  impacts:
+  - If the value is invalid, GEM falls back to using all available GPUs.
+  - This parameter controls which physical GPU becomes the primary device after environment remapping.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.init_setup
+  - code.config_manager
+- id: gpu.additional_available_gpus
+  label: Additional Available GPUs
+  aliases:
+  - additional_available_gpus
+  - additional gpus
+  - multi gpu
+  xml_path: /root/gpu/additional_available_gpus/gpu
+  summary: Optional list of extra GPU ids allowed for multi-GPU execution.
+  significance: Setup collects these ids, removes duplicates, validates them, and exports the combined
+    list through CUDA_VISIBLE_DEVICES.
+  impacts:
+  - Adding more valid GPUs allows GEM to split model-signal computation across more devices.
+  - Invalid ids trigger a fallback path that uses all available GPUs.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  - repo.readme
+  code_source_ids:
+  - code.init_setup
+  - repo.gpu_info
+- id: search_space.default_hrf
+  label: Default HRF
+  aliases:
+  - default_hrf
+  - hrf
+  - peak_delay
+  - under_shoot_delay
+  - peak_disp
+  - under_disp
+  - peak_to_undershoot
+  - normalize
+  - tr
+  xml_path: /root/search_space/default_hrf/@*
+  summary: SPM-style HRF parameter block used when no HRF is loaded from file.
+  significance: GEM builds the HRF curve from these values, using TR from the config or pixdim[4] from
+    the stimulus NIfTI header when the TR field is left empty.
+  impacts:
+  - Changing these values changes the HRF curve used to convolve the stimulus before fitting.
+  - The resulting HRF directly changes the modeled stimulus time courses.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.config_manager
+  - code.hrf_generator
+  - code.run_analysis
+- id: search_space.default_spatial_grid.visual_field_radius
+  label: Default Spatial Grid Visual Field Radius
+  aliases:
+  - visual_field_radius
+  - search space radius
+  - grid radius
+  xml_path: /root/search_space/default_spatial_grid/@visual_field_radius
+  summary: Radius of the pRF search grid, distinct from stimulus visual_field.
+  significance: GEM uses it as the extent for linspace calls that generate x and y pRF positions, and
+    the Gaussian model later validates points against the radius.
+  impacts:
+  - A larger radius expands the search grid in visual space.
+  - It changes the sampling extent, not just the number of points.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.config_manager
+  - code.run_analysis
+  - repo.gpu_info
+  related_parameters:
+  - search_space.default_spatial_grid.num_horizontal_prfs
+  - search_space.default_spatial_grid.num_vertical_prfs
+- id: search_space.default_spatial_grid.num_horizontal_prfs
+  label: Number of Horizontal pRFs
+  aliases:
+  - num_horizontal_prfs
+  - horizontal prfs
+  - horizontal grid
+  xml_path: /root/search_space/default_spatial_grid/@num_horizontal_prfs
+  summary: Number of x-axis grid points in the default pRF search space.
+  significance: GEM creates the spatial x grid with linspace using this count, so it directly changes
+    how many candidate pRF locations exist horizontally.
+  impacts:
+  - Combined with vertical grid count and sigma count, it increases the total number of candidate model
+    signals.
+  - A larger value yields a finer horizontal search grid but increases compute and memory cost.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  - repo.readme
+  code_source_ids:
+  - code.config_manager
+  - code.run_analysis
+  - repo.gpu_info
+  related_parameters:
+  - search_space.default_spatial_grid.num_vertical_prfs
+  - search_space.default_sigmas.num_sigmas
+- id: search_space.default_spatial_grid.num_vertical_prfs
+  label: Number of Vertical pRFs
+  aliases:
+  - num_vertical_prfs
+  - vertical prfs
+  - vertical grid
+  xml_path: /root/search_space/default_spatial_grid/@num_vertical_prfs
+  summary: Number of y-axis grid points in the default pRF search space.
+  significance: GEM creates the spatial y grid with linspace using this count, so it directly changes
+    how many candidate pRF locations exist vertically.
+  impacts:
+  - Combined with horizontal grid count and sigma count, it increases the total number of candidate model
+    signals.
+  - A larger value yields a finer vertical search grid but increases compute and memory cost.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  - repo.readme
+  code_source_ids:
+  - code.config_manager
+  - code.run_analysis
+  - repo.gpu_info
+  related_parameters:
+  - search_space.default_spatial_grid.num_horizontal_prfs
+  - search_space.default_sigmas.num_sigmas
+- id: search_space.default_sigmas.num_sigmas
+  label: Number of Sigmas
+  aliases:
+  - num_sigmas
+  - number of sigmas
+  - sigmas
+  xml_path: /root/search_space/default_sigmas/@num_sigmas
+  summary: Number of sigma values sampled in the default search space.
+  significance: GEM builds the sigma search dimension with linspace between min_sigma and max_sigma using
+    this count.
+  impacts:
+  - Together with horizontal and vertical grid sizes, it multiplies the total model count.
+  - More sigma values broaden or refine the size search but increase compute and memory demands.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  - repo.readme
+  code_source_ids:
+  - code.config_manager
+  - code.run_analysis
+  - repo.gpu_info
+  related_parameters:
+  - search_space.default_spatial_grid.num_horizontal_prfs
+  - search_space.default_spatial_grid.num_vertical_prfs
+- id: search_space.default_sigmas.min_sigma
+  label: Minimum Sigma
+  aliases:
+  - min_sigma
+  - minimum sigma
+  xml_path: /root/search_space/default_sigmas/@min_sigma
+  summary: Lower bound of the default sigma range.
+  significance: GEM uses it as the start of the sigma linspace when custom sigma values are not loaded
+    from file.
+  impacts:
+  - Changing it shifts the lower edge of the sigma search space.
+  - It does not change the number of sigma samples by itself.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.config_manager
+  - code.run_analysis
+- id: search_space.default_sigmas.max_sigma
+  label: Maximum Sigma
+  aliases:
+  - max_sigma
+  - maximum sigma
+  xml_path: /root/search_space/default_sigmas/@max_sigma
+  summary: Upper bound of the default sigma range.
+  significance: GEM uses it as the end of the sigma linspace when custom sigma values are not loaded from
+    file.
+  impacts:
+  - Changing it shifts the upper edge of the sigma search space.
+  - It does not change the number of sigma samples by itself.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.config_manager
+  - code.run_analysis
+- id: search_space.nDCT.value
+  label: nDCT
+  aliases:
+  - ndct
+  - n dct
+  - dct value
+  xml_path: /root/search_space/nDCT/@value
+  summary: Number controlling how many cosine regressors are used for low-frequency drift removal.
+  significance: The orthogonalization matrix code generates cosine trends using frequencies from 0 to
+    nDCT in steps of 0.5, which yields 2 * nDCT + 1 regressors.
+  impacts:
+  - Increasing nDCT adds more cosine regressors to the orthogonalization basis.
+  - That changes the projection matrix used before model fitting.
+  source_ids:
+  - website.config_generator
+  - repo.sample_config
+  code_source_ids:
+  - code.config_manager
+  - code.orthogonalization
+  - code.run_analysis

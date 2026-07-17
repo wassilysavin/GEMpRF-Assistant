@@ -1,0 +1,4 @@
+---
+source: website.config_generator
+---
+Surround suppression and centre–surround receptive fields in GEM-pRF. The 2D Gaussian model that GEM-pRF currently provides represents only a single isotropic excitatory centre with coordinates (μx, μy) and one size σ; it has no surround term. An inhibitory surround, a centre–surround profile, or surround suppression is therefore NOT supported by the 2D Gaussian model in GEM-pRF. Modelling a surround would instead require a Difference of Gaussians (DoG) model (Zuiderbaan et al., 2012), which subtracts a second, wider Gaussian to add an inhibitory surround around the excitatory centre. The GEM-pRF paper names DoG as a possible future addition and the package already ships abstract base classes for new pRF models, but the DoG class is an unimplemented stub and the configurator lists DoG as not available, so it cannot currently be selected.

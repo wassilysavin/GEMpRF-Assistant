@@ -1,0 +1,4 @@
+---
+source: paper.full
+---
+Why GEM-pRF's accuracy matches mrVista (paper §4.5 Speed, second paragraph). The paper explicitly attributes the parity to a shared mathematical core: 'The underlying mathematics for GEM-pRF is a reformulated version of the originally proposed pRF mapping methodology by Dumoulin and Wandell (2008). Therefore, the pRF parameters and retinotopic maps calculated with GEM-pRF are similar to those obtained by the mrVista gold-standard approach.' In other words, GEM-pRF is a reformulated, equivalent solver of the same GLM problem mrVista solves; the empirical parity (Pearson r = 1.00 for μx, μy, ρ²; r = 0.98 for σ across ~1.65 million NYU voxels) is a consequence of that equivalence, not a coincidence of tuning. This is the paper's stated rationale for why GEM-pRF's accuracy holds up under empirical comparison.

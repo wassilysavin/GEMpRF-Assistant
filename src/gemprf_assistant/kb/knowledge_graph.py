@@ -15,6 +15,7 @@ PARAM = Namespace("https://gemprf.local/parameter/")
 SRC = Namespace("https://gemprf.local/source/")
 CHUNK = Namespace("https://gemprf.local/chunk/")
 SECTION = Namespace("https://gemprf.local/section/")
+RELATION = Namespace("https://gemprf.local/relation/")
 
 # rdflib's SPARQL parser uses pyparsing global state that races under threads; serialize query parsing.
 _SPARQL_LOCK = threading.Lock()
@@ -138,6 +139,23 @@ class KnowledgeGraphStore:
                 # skos:related is symmetric; rdflib doesn't infer that.
                 g.add((uri, SKOS.related, other))
                 g.add((other, SKOS.related, uri))
+
+        # Curated grounded relations (authored in pipeline.parameter_relations) land here as a
+        # derived, documented artifact. Deliberately NOT skos:related: the retrieval arm's 1-hop
+        # expansion must stay unchanged; these triples exist for inspection and downstream tooling.
+        try:
+            from ..pipeline.parameter_relations import RELATIONS
+        except Exception:
+            RELATIONS = ()
+        for i, relation in enumerate(RELATIONS):
+            r_uri = RELATION[str(i)]
+            g.add((r_uri, RDF.type, GEMPRF.GroundedRelation))
+            g.add((r_uri, GEMPRF.kind, Literal(relation.kind)))
+            g.add((r_uri, SCHEMA.description, Literal(relation.text)))
+            g.add((r_uri, GEMPRF.supportedBy, source_uri(relation.source_id)))
+            for pid in relation.param_ids:
+                if pid in parameter_ids:
+                    g.add((r_uri, SCHEMA.about, parameter_uri(pid)))
 
         for section in sections:
             s_uri = section_uri(section.section_id)

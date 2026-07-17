@@ -1,0 +1,4 @@
+---
+source: website.config_generator
+---
+Use Spatial Grid XY from File in GEM-pRF. The configurator's 'Use Spatial Grid XY from File' checkbox sets /root/search_space/optional_analysis_params/spatial_grid_xy/@use_from_file="true" with a Spatial Grid XY Key field (@key, e.g. analysis_params/spatial_grid_xy). It only takes effect when 'Use Custom Parameters from File' (optional_analysis_params/@enable) is True. When active, gem.init_setup.run_selected_program calls H5FileManager.get_key_value(filepath, key) to load the spatial-grid array directly from the configured H5 file, replacing the meshgrid that would otherwise be built from <default_spatial_grid> attributes. If the H5 read returns None the run aborts with a red error. When inactive, <default_spatial_grid> is used to compute the grid.

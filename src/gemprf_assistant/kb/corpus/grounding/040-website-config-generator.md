@@ -1,0 +1,4 @@
+---
+source: website.config_generator
+---
+Use HRF from File in GEM-pRF. The configurator's 'Use HRF from File' checkbox sets /root/search_space/optional_analysis_params/hrf/@use_from_file="true" and is paired with an HRF Key field (@key, e.g. analysis_params/hrf_values). It only takes effect when the parent 'Use Custom Parameters from File' (optional_analysis_params/@enable) is True. When active, the run loader reads the HRF curve directly from the configured H5 file at the supplied key via H5FileManager.get_key_value and skips the SPM-style construction in spm_hrf_compat that would otherwise build the curve from the <default_hrf> attributes (TR, peak_delay, under_shoot_delay, peak_disp, under_disp, peak_to_undershoot, normalize). If the H5 read returns no value the run aborts with an explicit error. When inactive (or when optional_analysis_params is disabled), <default_hrf> is used in full.

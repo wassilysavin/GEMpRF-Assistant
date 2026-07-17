@@ -1,0 +1,4 @@
+---
+source: website.config_generator
+---
+Use Custom Parameters from File (Optional Analysis Parameters) in GEM-pRF. The configurator's 'Use Custom Parameters from File' checkbox sets /root/search_space/optional_analysis_params/@enable="true" and is the top-level switch that gates the per-section overrides — Use HRF from File, Use Sigmas from File, and Use Spatial Grid XY from File. The configurator also exposes a File Path field (@filepath) pointing at an HDF5 file. When the top-level enable is False the per-section flags are ignored and the analysis uses the values parsed from <default_hrf>, <default_sigmas>, and <default_spatial_grid>. When enable is True, each per-section flag is consulted independently: any subsection whose use_from_file is True loads its value from the configured H5 file at the per-subsection key; subsections with use_from_file=False still fall back to their default block.

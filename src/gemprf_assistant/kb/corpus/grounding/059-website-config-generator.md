@@ -1,0 +1,4 @@
+---
+source: website.config_generator
+---
+Results Analysis ID and Overwrite in GEM-pRF BIDS. The configurator's Results Analysis ID field maps to /root/input_datasrc/BIDS/results_anaylsis_id (the spelling 'anaylsis' is preserved verbatim in the XML schema) and the Overwrite checkbox to its @overwrite attribute. At runtime gem.init_setup.run_selected_program assembles the result directory as <basepath>/derivatives/prfanalyze-gem/analysis-<results_anaylsis_id>. If that directory already exists and @overwrite is 'False', the existing directory is moved aside with a timestamped suffix '<dir>_backup-YYYYMMDD-HHMMSS' before the new run starts; if @overwrite is 'True', the existing directory is reused. The same analysis ID is also passed to the BIDS handler when computing per-file result paths. Sample defaults: id=GEMDataAnalysisResults, overwrite=False.

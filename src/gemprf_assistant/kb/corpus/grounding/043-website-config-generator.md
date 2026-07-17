@@ -1,0 +1,4 @@
+---
+source: website.config_generator
+---
+Write Debug Info in GEM-pRF. The configurator's 'Write Debug Info' checkbox under Search Space maps to /root/search_space/@write_debug_info. When True the run initialises gem.utils.gem_write_to_file.GemWriteToFile (a singleton) with debugging_enabled=True and writes a sibling file debug_model_data.h5 in the analysis result directory. The file accumulates intermediate analysis arrays under hierarchical HDF5 paths via repeated write_array_to_h5 calls — including the pRF spatial grid, the HRF curve, the stimulus resampled and HRF-convolved arrays, the model-signal batches, the orthogonalisation matrix, and per-parameter derivative and orthonormalised model-signal variants. When False, GemWriteToFile is initialised in a no-op mode and no debug_model_data.h5 is produced.
