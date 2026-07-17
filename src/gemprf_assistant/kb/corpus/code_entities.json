@@ -1,0 +1,5079 @@
+{
+ "version": 1,
+ "entities": [
+  {
+   "id": "code.bids_handler::gem.data.bids_handler",
+   "kind": "module",
+   "name": "bids_handler",
+   "qualname": "gem.data.bids_handler",
+   "source_id": "code.bids_handler",
+   "module": "gem.data.bids_handler",
+   "file": "external/github/GEMpRF/gem/data/bids_handler.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "GemBidsHandler"
+   ],
+   "imports": [
+    "json",
+    "os",
+    "re",
+    "sys",
+    "gem.data.diagnostic_bids_tree",
+    "gem.data.gem_bids_concatenation_data_info",
+    "gem.data.gem_stimulus_file_info",
+    "gem.utils.logger"
+   ]
+  },
+  {
+   "id": "code.bids_handler::GemBidsHandler",
+   "kind": "class",
+   "name": "GemBidsHandler",
+   "qualname": "GemBidsHandler",
+   "source_id": "code.bids_handler",
+   "module": "gem.data.bids_handler",
+   "file": "external/github/GEMpRF/gem/data/bids_handler.py",
+   "line": 22,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "__get_stimulus_file_info",
+    "extract_value_from_bids_string",
+    "__print_bids_tree_summary",
+    "__get_matching_files",
+    "get_stimulus_info",
+    "get_non_bids_stimulus_info",
+    "get_input_filepaths",
+    "inputpath2resultpath",
+    "update_filename",
+    "get_concatenated_result_filepath"
+   ]
+  },
+  {
+   "id": "code.bids_handler::GemBidsHandler.__get_stimulus_file_info",
+   "kind": "method",
+   "name": "__get_stimulus_file_info",
+   "qualname": "GemBidsHandler.__get_stimulus_file_info",
+   "source_id": "code.bids_handler",
+   "module": "gem.data.bids_handler",
+   "file": "external/github/GEMpRF/gem/data/bids_handler.py",
+   "line": 24,
+   "doc": "",
+   "signature": "(cls, stimulus_dir, stimulus_filename)",
+   "calls": [
+    "search",
+    "StimulusFileInfo",
+    "group",
+    "ValueError"
+   ]
+  },
+  {
+   "id": "code.bids_handler::GemBidsHandler.extract_value_from_bids_string",
+   "kind": "method",
+   "name": "extract_value_from_bids_string",
+   "qualname": "GemBidsHandler.extract_value_from_bids_string",
+   "source_id": "code.bids_handler",
+   "module": "gem.data.bids_handler",
+   "file": "external/github/GEMpRF/gem/data/bids_handler.py",
+   "line": 35,
+   "doc": "",
+   "signature": "(cls, bids_format_string, key)",
+   "calls": [
+    "split"
+   ]
+  },
+  {
+   "id": "code.bids_handler::GemBidsHandler.__print_bids_tree_summary",
+   "kind": "method",
+   "name": "__print_bids_tree_summary",
+   "qualname": "GemBidsHandler.__print_bids_tree_summary",
+   "source_id": "code.bids_handler",
+   "module": "gem.data.bids_handler",
+   "file": "external/github/GEMpRF/gem/data/bids_handler.py",
+   "line": 44,
+   "doc": "",
+   "signature": "(cls, base_path, file_extension, analysis_list, sub_list, ses_list, run_list, task_list, hemi_list, space_list, is_individual_run)",
+   "calls": [
+    "print_green_message",
+    "enumerate",
+    "print",
+    "join"
+   ]
+  },
+  {
+   "id": "code.bids_handler::GemBidsHandler.__get_matching_files",
+   "kind": "method",
+   "name": "__get_matching_files",
+   "qualname": "GemBidsHandler.__get_matching_files",
+   "source_id": "code.bids_handler",
+   "module": "gem.data.bids_handler",
+   "file": "external/github/GEMpRF/gem/data/bids_handler.py",
+   "line": 75,
+   "doc": "",
+   "signature": "(cls, base_path, append_to_basepath_list, analysis_list, sub_list, hemi_list, space_list, json_item, stimuli_dir_path, file_extension, is_individual_run)",
+   "calls": [
+    "replace",
+    "walk",
+    "strip",
+    "join",
+    "collect_bids_diagnostics",
+    "print_bids_diagnostic_tree",
+    "listdir",
+    "print_red_message",
+    "split",
+    "isdir",
+    "startswith",
+    "endswith",
+    "lower",
+    "get_stimulus_info",
+    "append",
+    "tuple"
+   ]
+  },
+  {
+   "id": "code.bids_handler::GemBidsHandler.get_stimulus_info",
+   "kind": "method",
+   "name": "get_stimulus_info",
+   "qualname": "GemBidsHandler.get_stimulus_info",
+   "source_id": "code.bids_handler",
+   "module": "gem.data.bids_handler",
+   "file": "external/github/GEMpRF/gem/data/bids_handler.py",
+   "line": 175,
+   "doc": "",
+   "signature": "(cls, stimulus_dir, stimulus_name)",
+   "calls": [
+    "listdir",
+    "endswith",
+    "extract_value_from_bids_string"
+   ]
+  },
+  {
+   "id": "code.bids_handler::GemBidsHandler.get_non_bids_stimulus_info",
+   "kind": "method",
+   "name": "get_non_bids_stimulus_info",
+   "qualname": "GemBidsHandler.get_non_bids_stimulus_info",
+   "source_id": "code.bids_handler",
+   "module": "gem.data.bids_handler",
+   "file": "external/github/GEMpRF/gem/data/bids_handler.py",
+   "line": 182,
+   "doc": "",
+   "signature": "(cls, cfg)",
+   "calls": [
+    "dirname",
+    "basename",
+    "isfile",
+    "print_red_message",
+    "exit"
+   ]
+  },
+  {
+   "id": "code.bids_handler::GemBidsHandler.get_input_filepaths",
+   "kind": "method",
+   "name": "get_input_filepaths",
+   "qualname": "GemBidsHandler.get_input_filepaths",
+   "source_id": "code.bids_handler",
+   "module": "gem.data.bids_handler",
+   "file": "external/github/GEMpRF/gem/data/bids_handler.py",
+   "line": 194,
+   "doc": "",
+   "signature": "(cls, bids_config, stimuli_dir_path)",
+   "calls": [
+    "print_red_message",
+    "exit",
+    "strip",
+    "enumerate",
+    "sorted",
+    "lower",
+    "split",
+    "print_blue_message",
+    "append"
+   ]
+  },
+  {
+   "id": "code.bids_handler::GemBidsHandler.inputpath2resultpath",
+   "kind": "method",
+   "name": "inputpath2resultpath",
+   "qualname": "GemBidsHandler.inputpath2resultpath",
+   "source_id": "code.bids_handler",
+   "module": "gem.data.bids_handler",
+   "file": "external/github/GEMpRF/gem/data/bids_handler.py",
+   "line": 227,
+   "doc": "",
+   "signature": "(self, bids_config, input_file_info, analysis_id=...)",
+   "calls": [
+    "basename",
+    "endswith",
+    "join",
+    "split"
+   ]
+  },
+  {
+   "id": "code.bids_handler::GemBidsHandler.update_filename",
+   "kind": "method",
+   "name": "update_filename",
+   "qualname": "GemBidsHandler.update_filename",
+   "source_id": "code.bids_handler",
+   "module": "gem.data.bids_handler",
+   "file": "external/github/GEMpRF/gem/data/bids_handler.py",
+   "line": 254,
+   "doc": "",
+   "signature": "(cls, filename, info_dict)",
+   "calls": [
+    "split",
+    "range",
+    "join",
+    "items",
+    "startswith"
+   ]
+  },
+  {
+   "id": "code.bids_handler::GemBidsHandler.get_concatenated_result_filepath",
+   "kind": "method",
+   "name": "get_concatenated_result_filepath",
+   "qualname": "GemBidsHandler.get_concatenated_result_filepath",
+   "source_id": "code.bids_handler",
+   "module": "gem.data.bids_handler",
+   "file": "external/github/GEMpRF/gem/data/bids_handler.py",
+   "line": 268,
+   "doc": "",
+   "signature": "(cls, bids_config, filepath, concatenation_result_info)",
+   "calls": [
+    "endswith",
+    "update_filename",
+    "join",
+    "split",
+    "basename"
+   ]
+  },
+  {
+   "id": "code.config_manager::gem.configs.config_manager",
+   "kind": "module",
+   "name": "config_manager",
+   "qualname": "gem.configs.config_manager",
+   "source_id": "code.config_manager",
+   "module": "gem.configs.config_manager",
+   "file": "external/pypi/gemprf_wheel/gem/configs/config_manager.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "RunType",
+    "ConfigurationWrapper"
+   ],
+   "imports": [
+    "json",
+    "os",
+    "enum",
+    "xmltodict"
+   ]
+  },
+  {
+   "id": "code.config_manager::RunType",
+   "kind": "class",
+   "name": "RunType",
+   "qualname": "RunType",
+   "source_id": "code.config_manager",
+   "module": "gem.configs.config_manager",
+   "file": "external/pypi/gemprf_wheel/gem/configs/config_manager.py",
+   "line": 16,
+   "doc": "",
+   "bases": [
+    "Enum"
+   ],
+   "contains": []
+  },
+  {
+   "id": "code.config_manager::ConfigurationWrapper",
+   "kind": "class",
+   "name": "ConfigurationWrapper",
+   "qualname": "ConfigurationWrapper",
+   "source_id": "code.config_manager",
+   "module": "gem.configs.config_manager",
+   "file": "external/pypi/gemprf_wheel/gem/configs/config_manager.py",
+   "line": 20,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "__read_xml_file",
+    "parse_attrs",
+    "load_configuration"
+   ]
+  },
+  {
+   "id": "code.config_manager::ConfigurationWrapper.__read_xml_file",
+   "kind": "method",
+   "name": "__read_xml_file",
+   "qualname": "ConfigurationWrapper.__read_xml_file",
+   "source_id": "code.config_manager",
+   "module": "gem.configs.config_manager",
+   "file": "external/pypi/gemprf_wheel/gem/configs/config_manager.py",
+   "line": 24,
+   "doc": "",
+   "signature": "(cls, run_type=..., config_filepath=...)",
+   "calls": [
+    "dirname",
+    "isfile",
+    "realpath",
+    "join",
+    "print",
+    "open",
+    "parse",
+    "close",
+    "dumps",
+    "loads",
+    "read"
+   ]
+  },
+  {
+   "id": "code.config_manager::ConfigurationWrapper.parse_attrs",
+   "kind": "method",
+   "name": "parse_attrs",
+   "qualname": "ConfigurationWrapper.parse_attrs",
+   "source_id": "code.config_manager",
+   "module": "gem.configs.config_manager",
+   "file": "external/pypi/gemprf_wheel/gem/configs/config_manager.py",
+   "line": 45,
+   "doc": "Extracts attributes (removes '@'), converts values using types dict if provided.",
+   "signature": "(cls, node, types=...)",
+   "calls": [
+    "lstrip",
+    "items",
+    "startswith"
+   ]
+  },
+  {
+   "id": "code.config_manager::ConfigurationWrapper.load_configuration",
+   "kind": "method",
+   "name": "load_configuration",
+   "qualname": "ConfigurationWrapper.load_configuration",
+   "source_id": "code.config_manager",
+   "module": "gem.configs.config_manager",
+   "file": "external/pypi/gemprf_wheel/gem/configs/config_manager.py",
+   "line": 57,
+   "doc": "",
+   "signature": "(cls, run_type=..., config_filepath=...)",
+   "calls": [
+    "parse_attrs",
+    "print",
+    "tuple",
+    "lower",
+    "isdigit",
+    "float",
+    "split",
+    "join",
+    "replace",
+    "strip",
+    "items",
+    "isinstance"
+   ]
+  },
+  {
+   "id": "code.hrf_generator::gem.signals.hrf_generator",
+   "kind": "module",
+   "name": "hrf_generator",
+   "qualname": "gem.signals.hrf_generator",
+   "source_id": "code.hrf_generator",
+   "module": "gem.signals.hrf_generator",
+   "file": "external/pypi/gemprf_wheel/gem/signals/hrf_generator.py",
+   "line": 1,
+   "doc": "",
+   "contains": [
+    "spm_hrf_compat"
+   ],
+   "imports": [
+    "scipy",
+    "numpy"
+   ]
+  },
+  {
+   "id": "code.hrf_generator::spm_hrf_compat",
+   "kind": "function",
+   "name": "spm_hrf_compat",
+   "qualname": "spm_hrf_compat",
+   "source_id": "code.hrf_generator",
+   "module": "gem.signals.hrf_generator",
+   "file": "external/pypi/gemprf_wheel/gem/signals/hrf_generator.py",
+   "line": 7,
+   "doc": "SPM HRF function from sum of two gamma PDFs",
+   "signature": "(t, peak_delay=..., under_delay=..., peak_disp=..., under_disp=..., p_u_ratio=..., normalize=...)",
+   "calls": [
+    "zeros",
+    "ValueError"
+   ]
+  },
+  {
+   "id": "code.init_setup::gem.init_setup",
+   "kind": "module",
+   "name": "init_setup",
+   "qualname": "gem.init_setup",
+   "source_id": "code.init_setup",
+   "module": "gem.init_setup",
+   "file": "external/pypi/gemprf_wheel/gem/init_setup.py",
+   "line": 1,
+   "doc": "",
+   "contains": [
+    "set_system_gpus",
+    "manage_gpus",
+    "run_selected_program"
+   ],
+   "imports": []
+  },
+  {
+   "id": "code.init_setup::set_system_gpus",
+   "kind": "function",
+   "name": "set_system_gpus",
+   "qualname": "set_system_gpus",
+   "source_id": "code.init_setup",
+   "module": "gem.init_setup",
+   "file": "external/pypi/gemprf_wheel/gem/init_setup.py",
+   "line": 1,
+   "doc": "",
+   "signature": "(max_available_gpus)",
+   "calls": [
+    "list",
+    "join",
+    "range"
+   ]
+  },
+  {
+   "id": "code.init_setup::manage_gpus",
+   "kind": "function",
+   "name": "manage_gpus",
+   "qualname": "manage_gpus",
+   "source_id": "code.init_setup",
+   "module": "gem.init_setup",
+   "file": "external/pypi/gemprf_wheel/gem/init_setup.py",
+   "line": 6,
+   "doc": "",
+   "signature": "(cfg, max_available_gpus)",
+   "calls": [
+    "join",
+    "sorted",
+    "ValueError",
+    "isinstance",
+    "print_blue_message"
+   ]
+  },
+  {
+   "id": "code.init_setup::run_selected_program",
+   "kind": "function",
+   "name": "run_selected_program",
+   "qualname": "run_selected_program",
+   "source_id": "code.init_setup",
+   "module": "gem.init_setup",
+   "file": "external/pypi/gemprf_wheel/gem/init_setup.py",
+   "line": 37,
+   "doc": "",
+   "signature": "(selected_program, config_filepath)",
+   "calls": [
+    "load_config",
+    "print",
+    "nvmlInit",
+    "nvmlDeviceGetCount",
+    "nvmlShutdown",
+    "get_selected_prf_model",
+    "PRFSpace",
+    "convert_spatial_to_multidim",
+    "print_red_message",
+    "exit",
+    "get_key_value",
+    "manage_gpus",
+    "PRFGaussianModel",
+    "get_additional_dimensions",
+    "set_system_gpus",
+    "join"
+   ]
+  },
+  {
+   "id": "code.orthogonalization::gem.signals.orthogonalization_matrix",
+   "kind": "module",
+   "name": "orthogonalization_matrix",
+   "qualname": "gem.signals.orthogonalization_matrix",
+   "source_id": "code.orthogonalization",
+   "module": "gem.signals.orthogonalization_matrix",
+   "file": "external/pypi/gemprf_wheel/gem/signals/orthogonalization_matrix.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "OrthoMatrix"
+   ],
+   "imports": [
+    "numpy",
+    "cupy",
+    "gem.utils.gem_gpu_manager"
+   ]
+  },
+  {
+   "id": "code.orthogonalization::OrthoMatrix",
+   "kind": "class",
+   "name": "OrthoMatrix",
+   "qualname": "OrthoMatrix",
+   "source_id": "code.orthogonalization",
+   "module": "gem.signals.orthogonalization_matrix",
+   "file": "external/pypi/gemprf_wheel/gem/signals/orthogonalization_matrix.py",
+   "line": 15,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "__init__",
+    "get_orthogonalization_matrix"
+   ]
+  },
+  {
+   "id": "code.orthogonalization::OrthoMatrix.__init__",
+   "kind": "method",
+   "name": "__init__",
+   "qualname": "OrthoMatrix.__init__",
+   "source_id": "code.orthogonalization",
+   "module": "gem.signals.orthogonalization_matrix",
+   "file": "external/pypi/gemprf_wheel/gem/signals/orthogonalization_matrix.py",
+   "line": 16,
+   "doc": "",
+   "signature": "(self, nDCT, num_frame_stimulus)",
+   "calls": []
+  },
+  {
+   "id": "code.orthogonalization::OrthoMatrix.get_orthogonalization_matrix",
+   "kind": "method",
+   "name": "get_orthogonalization_matrix",
+   "qualname": "OrthoMatrix.get_orthogonalization_matrix",
+   "source_id": "code.orthogonalization",
+   "module": "gem.signals.orthogonalization_matrix",
+   "file": "external/pypi/gemprf_wheel/gem/signals/orthogonalization_matrix.py",
+   "line": 21,
+   "doc": "",
+   "signature": "(self)",
+   "calls": [
+    "sign",
+    "linspace",
+    "Device",
+    "asarray",
+    "arange",
+    "get_instance"
+   ]
+  },
+  {
+   "id": "code.prf_stimulus::gem.model.prf_stimulus",
+   "kind": "module",
+   "name": "prf_stimulus",
+   "qualname": "gem.model.prf_stimulus",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "Stimulus"
+   ],
+   "imports": [
+    "numpy",
+    "cupy",
+    "matplotlib",
+    "nibabel",
+    "scipy.ndimage",
+    "scipy.signal",
+    "os",
+    "gem.utils.gem_gpu_manager",
+    "gem.utils.logger"
+   ]
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus",
+   "kind": "class",
+   "name": "Stimulus",
+   "qualname": "Stimulus",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 21,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "__init__",
+    "stimulus_data_gpu",
+    "stimulus_data_cpu",
+    "Height",
+    "Width",
+    "NumFrames",
+    "HighTemporalResolutionEnabled",
+    "NumFramesDownsampled",
+    "SliceTimeRef",
+    "Header",
+    "StimulusTaskName",
+    "compute_resample_stimulus_data",
+    "compute_hrf_convolved_stimulus_data",
+    "__compute_flattened_columnmajor_stimulus_data",
+    "data_shape"
+   ]
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus.__init__",
+   "kind": "method",
+   "name": "__init__",
+   "qualname": "Stimulus.__init__",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 22,
+   "doc": "",
+   "signature": "(self, relative_file_path, size_in_degrees, stim_config, binarize, binarize_threshold, high_temporal_resolution_info=..., stimulus_task_name=...)",
+   "calls": [
+    "dirname",
+    "join",
+    "load",
+    "squeeze",
+    "linspace",
+    "execute_cupy_func_on_default",
+    "abspath",
+    "get_fdata",
+    "print_yellow_message",
+    "astype",
+    "float",
+    "get_instance",
+    "isin"
+   ]
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus.stimulus_data_gpu",
+   "kind": "method",
+   "name": "stimulus_data_gpu",
+   "qualname": "Stimulus.stimulus_data_gpu",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 58,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus.stimulus_data_cpu",
+   "kind": "method",
+   "name": "stimulus_data_cpu",
+   "qualname": "Stimulus.stimulus_data_cpu",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 65,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus.Height",
+   "kind": "method",
+   "name": "Height",
+   "qualname": "Stimulus.Height",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 71,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus.Width",
+   "kind": "method",
+   "name": "Width",
+   "qualname": "Stimulus.Width",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 75,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus.NumFrames",
+   "kind": "method",
+   "name": "NumFrames",
+   "qualname": "Stimulus.NumFrames",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 79,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus.HighTemporalResolutionEnabled",
+   "kind": "method",
+   "name": "HighTemporalResolutionEnabled",
+   "qualname": "Stimulus.HighTemporalResolutionEnabled",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 83,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus.NumFramesDownsampled",
+   "kind": "method",
+   "name": "NumFramesDownsampled",
+   "qualname": "Stimulus.NumFramesDownsampled",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 87,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus.SliceTimeRef",
+   "kind": "method",
+   "name": "SliceTimeRef",
+   "qualname": "Stimulus.SliceTimeRef",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 91,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus.Header",
+   "kind": "method",
+   "name": "Header",
+   "qualname": "Stimulus.Header",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 95,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus.StimulusTaskName",
+   "kind": "method",
+   "name": "StimulusTaskName",
+   "qualname": "Stimulus.StimulusTaskName",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 99,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus.compute_resample_stimulus_data",
+   "kind": "method",
+   "name": "compute_resample_stimulus_data",
+   "qualname": "Stimulus.compute_resample_stimulus_data",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 102,
+   "doc": "",
+   "signature": "(self, resampled_stimulus_shape)",
+   "calls": [
+    "zoom",
+    "squeeze"
+   ]
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus.compute_hrf_convolved_stimulus_data",
+   "kind": "method",
+   "name": "compute_hrf_convolved_stimulus_data",
+   "qualname": "Stimulus.compute_hrf_convolved_stimulus_data",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 116,
+   "doc": "Computes HRF-convolved stimulus timecourses for all pixels",
+   "signature": "(self, hrf_curve)",
+   "calls": [
+    "reshape",
+    "fftconvolve"
+   ]
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus.__compute_flattened_columnmajor_stimulus_data",
+   "kind": "method",
+   "name": "__compute_flattened_columnmajor_stimulus_data",
+   "qualname": "Stimulus.__compute_flattened_columnmajor_stimulus_data",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 137,
+   "doc": "",
+   "signature": "(self)",
+   "calls": [
+    "flatten",
+    "execute_cupy_func_on_default",
+    "reshape",
+    "get_instance"
+   ]
+  },
+  {
+   "id": "code.prf_stimulus::Stimulus.data_shape",
+   "kind": "method",
+   "name": "data_shape",
+   "qualname": "Stimulus.data_shape",
+   "source_id": "code.prf_stimulus",
+   "module": "gem.model.prf_stimulus",
+   "file": "external/pypi/gemprf_wheel/gem/model/prf_stimulus.py",
+   "line": 150,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "code.run_analysis::gem.run.run_gem_prf_analysis",
+   "kind": "module",
+   "name": "run_gem_prf_analysis",
+   "qualname": "gem.run.run_gem_prf_analysis",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "GEMpRFAnalysis"
+   ],
+   "imports": [
+    "math",
+    "shutil",
+    "sys",
+    "os",
+    "numpy",
+    "cupy",
+    "threading",
+    "queue",
+    "datetime",
+    "cProfile",
+    "pstats",
+    "pandas",
+    "time",
+    "contextlib",
+    "gem.model.prf_model",
+    "gem.model.prf_gaussian_model",
+    "gem.space.PRFSpace",
+    "gem.fitting.hpc_grid_fit",
+    "gem.fitting.hpc_refine_fit",
+    "gem.analysis.prf_analysis",
+    "gem.space.coefficient_matrix",
+    "gem.utils.hpc_cupy_utils",
+    "gem.model.selected_prf_model",
+    "gem.signals.signal_synthesizer",
+    "gem.model.prf_stimulus",
+    "gem.utils.logger",
+    "gem.utils.gem_write_to_file",
+    "gem.analysis.prf_r2_variance_explain",
+    "gem.data.observed_data",
+    "gem.signals.orthogonalization_matrix",
+    "gem.data.bids_handler",
+    "gem.data.gem_bids_concatenation_data_info",
+    "gem.data.gem_stimulus_file_info",
+    "gem.tools.json_file_operations",
+    "gem.utils.gem_gpu_manager",
+    "gem.utils.gem_h5_file_handler",
+    "gem.signals.hrf_generator"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis",
+   "kind": "class",
+   "name": "GEMpRFAnalysis",
+   "qualname": "GEMpRFAnalysis",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 58,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "get_hrf_curve",
+    "load_config",
+    "load_stimulus",
+    "get_prf_spatial_points",
+    "get_additional_dimensions",
+    "execute_Grids2MpInv_NewMethod",
+    "get_selected_prf_model",
+    "compute_orthonormalized_signals",
+    "get_single_run_data_files_info",
+    "get_concatenated_runs_data_files_info",
+    "get_refined_signals_cpu",
+    "get_valid_refined_data",
+    "get_pRF_estimations",
+    "concatenated_run",
+    "individual_run",
+    "run"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.get_hrf_curve",
+   "kind": "method",
+   "name": "get_hrf_curve",
+   "qualname": "GEMpRFAnalysis.get_hrf_curve",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 62,
+   "doc": "",
+   "signature": "(cls, cfg, stimulus)",
+   "calls": [
+    "get_key_value",
+    "spm_hrf_compat",
+    "print_red_message",
+    "exit",
+    "print_yellow_message",
+    "arange"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.load_config",
+   "kind": "method",
+   "name": "load_config",
+   "qualname": "GEMpRFAnalysis.load_config",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 92,
+   "doc": "",
+   "signature": "(cls, config_filepath=...)",
+   "calls": [
+    "load_configuration"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.load_stimulus",
+   "kind": "method",
+   "name": "load_stimulus",
+   "qualname": "GEMpRFAnalysis.load_stimulus",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 99,
+   "doc": "",
+   "signature": "(cls, cfg, stimulus_info=...)",
+   "calls": [
+    "float",
+    "Stimulus",
+    "get_hrf_curve",
+    "write_array_to_h5",
+    "compute_resample_stimulus_data",
+    "compute_hrf_convolved_stimulus_data",
+    "join",
+    "get_instance"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.get_prf_spatial_points",
+   "kind": "method",
+   "name": "get_prf_spatial_points",
+   "qualname": "GEMpRFAnalysis.get_prf_spatial_points",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 128,
+   "doc": "",
+   "signature": "(cls, cfg)",
+   "calls": [
+    "linspace",
+    "meshgrid",
+    "column_stack",
+    "float",
+    "ravel"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.get_additional_dimensions",
+   "kind": "method",
+   "name": "get_additional_dimensions",
+   "qualname": "GEMpRFAnalysis.get_additional_dimensions",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 136,
+   "doc": "",
+   "signature": "(cls, cfg, selected_prf_model)",
+   "calls": [
+    "make_extra_dimensions",
+    "ValueError",
+    "get_key_value",
+    "linspace",
+    "print_red_message",
+    "exit",
+    "float"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.execute_Grids2MpInv_NewMethod",
+   "kind": "method",
+   "name": "execute_Grids2MpInv_NewMethod",
+   "qualname": "GEMpRFAnalysis.execute_Grids2MpInv_NewMethod",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 153,
+   "doc": "",
+   "signature": "(cls, prf_space, result_queue)",
+   "calls": [
+    "compute_multidim_points_neighbours",
+    "Wrapper_Grids2MpInv_numba"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.get_selected_prf_model",
+   "kind": "method",
+   "name": "get_selected_prf_model",
+   "qualname": "GEMpRFAnalysis.get_selected_prf_model",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 159,
+   "doc": "",
+   "signature": "(cls, cfg)",
+   "calls": [
+    "ValueError"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.compute_orthonormalized_signals",
+   "kind": "method",
+   "name": "compute_orthonormalized_signals",
+   "qualname": "GEMpRFAnalysis.compute_orthonormalized_signals",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 168,
+   "doc": "",
+   "signature": "(cls, O_gpu, prf_space, prf_model, stimulus, cfg, stimulus_task_name=...)",
+   "calls": [
+    "compute_signals_batches",
+    "orthonormalize_modelled_signals",
+    "write_array_to_h5",
+    "range",
+    "append",
+    "get_instance",
+    "GaussianModelParams"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.get_single_run_data_files_info",
+   "kind": "method",
+   "name": "get_single_run_data_files_info",
+   "qualname": "GEMpRFAnalysis.get_single_run_data_files_info",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 196,
+   "doc": "",
+   "signature": "(cls, cfg)",
+   "calls": [
+    "range",
+    "get_input_filepaths",
+    "isinstance",
+    "append",
+    "inputpath2resultpath",
+    "basename",
+    "join",
+    "split",
+    "array",
+    "replace",
+    "today"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.get_concatenated_runs_data_files_info",
+   "kind": "method",
+   "name": "get_concatenated_runs_data_files_info",
+   "qualname": "GEMpRFAnalysis.get_concatenated_runs_data_files_info",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 226,
+   "doc": "",
+   "signature": "(cls, cfg)",
+   "calls": [
+    "get_input_filepaths",
+    "ValueError",
+    "sort",
+    "compare_and_merge_data_info_dicts",
+    "get_concatenated_result_filepath",
+    "BidsConcatenationDataInfo",
+    "append"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.get_refined_signals_cpu",
+   "kind": "method",
+   "name": "get_refined_signals_cpu",
+   "qualname": "GEMpRFAnalysis.get_refined_signals_cpu",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 258,
+   "doc": "",
+   "signature": "(cls, refined_prf_params_XY, prf_model, stimulus, cfg)",
+   "calls": [
+    "compute_signals_batches",
+    "range",
+    "concatenate",
+    "asnumpy",
+    "Device",
+    "append"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.get_valid_refined_data",
+   "kind": "method",
+   "name": "get_valid_refined_data",
+   "qualname": "GEMpRFAnalysis.get_valid_refined_data",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 275,
+   "doc": "",
+   "signature": "(cls, refined_matching_results_XY, Y_signals_gpu, O_gpu, prf_model, stimulus, coarse_e, best_fit_proj, coarse_pRF_estimations, cfg)",
+   "calls": [
+    "compute_signals_batches",
+    "orthonormalize_modelled_signals",
+    "get_error_terms",
+    "diagonal",
+    "argwhere",
+    "isinstance",
+    "asnumpy",
+    "arange",
+    "isnan"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.get_pRF_estimations",
+   "kind": "method",
+   "name": "get_pRF_estimations",
+   "qualname": "GEMpRFAnalysis.get_pRF_estimations",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 302,
+   "doc": "",
+   "signature": "(cls, cfg, O_gpu, prf_space, prf_model, stimulus, prf_analysis, arr_2d_location_inv_M_cpu, measured_data_filepath)",
+   "calls": [
+    "ObservedData",
+    "get_y_signals",
+    "range",
+    "print_red_message",
+    "exit",
+    "execute_cupy_func_on_default",
+    "error_term_computation_func",
+    "get_refined_signals_cpu",
+    "reshape",
+    "get_refined_fit_results",
+    "get_valid_refined_data",
+    "concatenate",
+    "get_instance",
+    "get_r2_num_den_method_with_epsilon_as_yTs"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.concatenated_run",
+   "kind": "method",
+   "name": "concatenated_run",
+   "qualname": "GEMpRFAnalysis.concatenated_run",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 384,
+   "doc": "",
+   "signature": "(cls, cfg, prf_model, prf_space)",
+   "calls": [
+    "get_concatenated_runs_data_files_info",
+    "Queue",
+    "Thread",
+    "start",
+    "get_instance",
+    "print_red_message",
+    "join",
+    "time",
+    "range",
+    "write_to_file",
+    "print_green_message",
+    "print",
+    "empty",
+    "ObservedData",
+    "get_y_signals",
+    "YSignalsInfo"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.individual_run",
+   "kind": "method",
+   "name": "individual_run",
+   "qualname": "GEMpRFAnalysis.individual_run",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 596,
+   "doc": "",
+   "signature": "(cls, cfg, prf_model, prf_space)",
+   "calls": [
+    "time",
+    "get_single_run_data_files_info",
+    "write_array_to_h5",
+    "load_stimulus",
+    "OrthoMatrix",
+    "get_orthogonalization_matrix",
+    "PRFAnalysis",
+    "compute_orthonormalized_signals",
+    "print_green_message",
+    "range",
+    "print",
+    "print_red_message",
+    "array",
+    "get_stimulus_info",
+    "get_non_bids_stimulus_info",
+    "Queue"
+   ]
+  },
+  {
+   "id": "code.run_analysis::GEMpRFAnalysis.run",
+   "kind": "method",
+   "name": "run",
+   "qualname": "GEMpRFAnalysis.run",
+   "source_id": "code.run_analysis",
+   "module": "gem.run.run_gem_prf_analysis",
+   "file": "external/pypi/gemprf_wheel/gem/run/run_gem_prf_analysis.py",
+   "line": 700,
+   "doc": "",
+   "signature": "(cls, cfg, prf_model, prf_space)",
+   "calls": [
+    "concatenated_run",
+    "individual_run",
+    "lower"
+   ]
+  },
+  {
+   "id": "code.signal_synthesizer::gem.signals.signal_synthesizer",
+   "kind": "module",
+   "name": "signal_synthesizer",
+   "qualname": "gem.signals.signal_synthesizer",
+   "source_id": "code.signal_synthesizer",
+   "module": "gem.signals.signal_synthesizer",
+   "file": "external/pypi/gemprf_wheel/gem/signals/signal_synthesizer.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "SignalSynthesizer"
+   ],
+   "imports": [
+    "math",
+    "os",
+    "sys",
+    "typing",
+    "numpy",
+    "cupy",
+    "matplotlib",
+    "enum",
+    "gem.model.selected_prf_model",
+    "gem.model.prf_stimulus",
+    "gem.model.prf_model",
+    "gem.space.PRFSpace",
+    "gem.utils.hpc_cupy_utils",
+    "gem.utils.gem_write_to_file",
+    "gem.utils.logger",
+    "gem.utils.gem_gpu_manager"
+   ]
+  },
+  {
+   "id": "code.signal_synthesizer::SignalSynthesizer",
+   "kind": "class",
+   "name": "SignalSynthesizer",
+   "qualname": "SignalSynthesizer",
+   "source_id": "code.signal_synthesizer",
+   "module": "gem.signals.signal_synthesizer",
+   "file": "external/pypi/gemprf_wheel/gem/signals/signal_synthesizer.py",
+   "line": 33,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "__set_kernel_config",
+    "compute_signals_on_gpu",
+    "get_stimulus_data_on_selected_gpu"
+   ]
+  },
+  {
+   "id": "code.signal_synthesizer::SignalSynthesizer.__set_kernel_config",
+   "kind": "method",
+   "name": "__set_kernel_config",
+   "qualname": "SignalSynthesizer.__set_kernel_config",
+   "source_id": "code.signal_synthesizer",
+   "module": "gem.signals.signal_synthesizer",
+   "file": "external/pypi/gemprf_wheel/gem/signals/signal_synthesizer.py",
+   "line": 35,
+   "doc": "",
+   "signature": "(self, num_xThreads, num_yThreads, num_zThreads)",
+   "calls": []
+  },
+  {
+   "id": "code.signal_synthesizer::SignalSynthesizer.compute_signals_on_gpu",
+   "kind": "method",
+   "name": "compute_signals_on_gpu",
+   "qualname": "SignalSynthesizer.compute_signals_on_gpu",
+   "source_id": "code.signal_synthesizer",
+   "module": "gem.signals.signal_synthesizer",
+   "file": "external/pypi/gemprf_wheel/gem/signals/signal_synthesizer.py",
+   "line": 45,
+   "doc": "",
+   "signature": "(cls, model_type, stimulus_data_selected_gpu, stimulus_x_range, stimulus_y_range, stimulus_height, stimulus_width, cuda_kernel, multi_dim_points_gpu, num_dimension)",
+   "calls": [
+    "zeros",
+    "ravel",
+    "cuda_kernel",
+    "reshape",
+    "asnumpy",
+    "subplots",
+    "imshow",
+    "set_xlabel",
+    "set_ylabel",
+    "set_title",
+    "set_xticks",
+    "set_yticks",
+    "show",
+    "figure",
+    "plot",
+    "print_red_message"
+   ]
+  },
+  {
+   "id": "code.signal_synthesizer::SignalSynthesizer.get_stimulus_data_on_selected_gpu",
+   "kind": "method",
+   "name": "get_stimulus_data_on_selected_gpu",
+   "qualname": "SignalSynthesizer.get_stimulus_data_on_selected_gpu",
+   "source_id": "code.signal_synthesizer",
+   "module": "gem.signals.signal_synthesizer",
+   "file": "external/pypi/gemprf_wheel/gem/signals/signal_synthesizer.py",
+   "line": 109,
+   "doc": "",
+   "signature": "(cls, stimulus, selected_device_id)",
+   "calls": [
+    "get_instance",
+    "Device",
+    "asarray"
+   ]
+  },
+  {
+   "id": "demokit.run_gemprf_demo::/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.run_gemprf_demo",
+   "kind": "module",
+   "name": "run_gemprf_demo",
+   "qualname": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.run_gemprf_demo",
+   "source_id": "demokit.run_gemprf_demo",
+   "module": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.run_gemprf_demo",
+   "file": "external/GEMpRF-DemoKit/run_gemprf_demo.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [],
+   "imports": [
+    "gemprf",
+    "utils.messages"
+   ]
+  },
+  {
+   "id": "demokit.utils.auto_path::/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.auto_path",
+   "kind": "module",
+   "name": "auto_path",
+   "qualname": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.auto_path",
+   "source_id": "demokit.utils.auto_path",
+   "module": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.auto_path",
+   "file": "external/GEMpRF-DemoKit/utils/auto_path.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "auto_path_setting"
+   ],
+   "imports": [
+    "os",
+    "lxml",
+    "utils.xml_utils"
+   ]
+  },
+  {
+   "id": "demokit.utils.auto_path::auto_path_setting",
+   "kind": "function",
+   "name": "auto_path_setting",
+   "qualname": "auto_path_setting",
+   "source_id": "demokit.utils.auto_path",
+   "module": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.auto_path",
+   "file": "external/GEMpRF-DemoKit/utils/auto_path.py",
+   "line": 12,
+   "doc": "",
+   "signature": "(config_filepath)",
+   "calls": [
+    "abspath",
+    "replace",
+    "XMLParser",
+    "parse",
+    "getroot",
+    "xpath",
+    "write",
+    "isfile",
+    "print",
+    "basename",
+    "dirname",
+    "join"
+   ]
+  },
+  {
+   "id": "demokit.utils.config_library::/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.config_library",
+   "kind": "module",
+   "name": "config_library",
+   "qualname": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.config_library",
+   "source_id": "demokit.utils.config_library",
+   "module": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.config_library",
+   "file": "external/GEMpRF-DemoKit/utils/config_library.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "get_config_library",
+    "choose_config"
+   ],
+   "imports": [
+    "os"
+   ]
+  },
+  {
+   "id": "demokit.utils.config_library::get_config_library",
+   "kind": "function",
+   "name": "get_config_library",
+   "qualname": "get_config_library",
+   "source_id": "demokit.utils.config_library",
+   "module": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.config_library",
+   "file": "external/GEMpRF-DemoKit/utils/config_library.py",
+   "line": 9,
+   "doc": "Returns a list of config options.",
+   "signature": "()",
+   "calls": [
+    "dirname",
+    "join",
+    "replace",
+    "abspath"
+   ]
+  },
+  {
+   "id": "demokit.utils.config_library::choose_config",
+   "kind": "function",
+   "name": "choose_config",
+   "qualname": "choose_config",
+   "source_id": "demokit.utils.config_library",
+   "module": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.config_library",
+   "file": "external/GEMpRF-DemoKit/utils/config_library.py",
+   "line": 58,
+   "doc": "Display numbered config list and return chosen config path.",
+   "signature": "()",
+   "calls": [
+    "get_config_library",
+    "print",
+    "enumerate",
+    "strip",
+    "input"
+   ]
+  },
+  {
+   "id": "demokit.utils.messages::/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.messages",
+   "kind": "module",
+   "name": "messages",
+   "qualname": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.messages",
+   "source_id": "demokit.utils.messages",
+   "module": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.messages",
+   "file": "external/GEMpRF-DemoKit/utils/messages.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "Messages"
+   ],
+   "imports": []
+  },
+  {
+   "id": "demokit.utils.messages::Messages",
+   "kind": "class",
+   "name": "Messages",
+   "qualname": "Messages",
+   "source_id": "demokit.utils.messages",
+   "module": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.messages",
+   "file": "external/GEMpRF-DemoKit/utils/messages.py",
+   "line": 8,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "print_message"
+   ]
+  },
+  {
+   "id": "demokit.utils.messages::Messages.print_message",
+   "kind": "method",
+   "name": "print_message",
+   "qualname": "Messages.print_message",
+   "source_id": "demokit.utils.messages",
+   "module": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.messages",
+   "file": "external/GEMpRF-DemoKit/utils/messages.py",
+   "line": 10,
+   "doc": "",
+   "signature": "(cls, message_id, color_code=..., custom_format=...)",
+   "calls": [
+    "next",
+    "format",
+    "print",
+    "startswith"
+   ]
+  },
+  {
+   "id": "demokit.utils.xml_utils::/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.xml_utils",
+   "kind": "module",
+   "name": "xml_utils",
+   "qualname": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.xml_utils",
+   "source_id": "demokit.utils.xml_utils",
+   "module": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.xml_utils",
+   "file": "external/GEMpRF-DemoKit/utils/xml_utils.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "update_xml_value",
+    "create_coarse_grid_config"
+   ],
+   "imports": [
+    "lxml",
+    "shutil"
+   ]
+  },
+  {
+   "id": "demokit.utils.xml_utils::update_xml_value",
+   "kind": "function",
+   "name": "update_xml_value",
+   "qualname": "update_xml_value",
+   "source_id": "demokit.utils.xml_utils",
+   "module": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.xml_utils",
+   "file": "external/GEMpRF-DemoKit/utils/xml_utils.py",
+   "line": 11,
+   "doc": "Update the text content of a single XML node without disturbing",
+   "signature": "(filepath, xpath, new_value)",
+   "calls": [
+    "XMLParser",
+    "parse",
+    "getroot",
+    "xpath",
+    "write",
+    "ValueError"
+   ]
+  },
+  {
+   "id": "demokit.utils.xml_utils::create_coarse_grid_config",
+   "kind": "function",
+   "name": "create_coarse_grid_config",
+   "qualname": "create_coarse_grid_config",
+   "source_id": "demokit.utils.xml_utils",
+   "module": "/.Users.wassilysavin.Documents.reps3.GEMpRF-Assistant.external.GEMpRF-DemoKit.utils.xml_utils",
+   "file": "external/GEMpRF-DemoKit/utils/xml_utils.py",
+   "line": 29,
+   "doc": "Create a copy of the config file and modify:",
+   "signature": "(original_xml, coarse_xml_path)",
+   "calls": [
+    "copy2",
+    "XMLParser",
+    "parse",
+    "getroot",
+    "xpath",
+    "write"
+   ]
+  },
+  {
+   "id": "github.gem.analysis.prf_analysis::gem.analysis.prf_analysis",
+   "kind": "module",
+   "name": "prf_analysis",
+   "qualname": "gem.analysis.prf_analysis",
+   "source_id": "github.gem.analysis.prf_analysis",
+   "module": "gem.analysis.prf_analysis",
+   "file": "external/github/GEMpRF/gem/analysis/prf_analysis.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "PRFAnalysis"
+   ],
+   "imports": [
+    "numpy",
+    "cupy",
+    "typing",
+    "gem.model.prf_model",
+    "gem.model.selected_prf_model",
+    "gem.model.prf_stimulus",
+    "gem.space.PRFSpace",
+    "gem.utils.hpc_cupy_utils"
+   ]
+  },
+  {
+   "id": "github.gem.analysis.prf_analysis::PRFAnalysis",
+   "kind": "class",
+   "name": "PRFAnalysis",
+   "qualname": "PRFAnalysis",
+   "source_id": "github.gem.analysis.prf_analysis",
+   "module": "gem.analysis.prf_analysis",
+   "file": "external/github/GEMpRF/gem/analysis/prf_analysis.py",
+   "line": 23,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "__init__",
+    "prf_points",
+    "stimulus",
+    "orthonormalized_S_batches",
+    "orthonormalized_S_batches",
+    "orthonormalized_dS_dtheta_batches_list",
+    "orthonormalized_dS_dtheta_batches_list",
+    "error_e",
+    "error_e",
+    "error_de_dtheta_list",
+    "error_de_dtheta_list"
+   ]
+  },
+  {
+   "id": "github.gem.analysis.prf_analysis::PRFAnalysis.__init__",
+   "kind": "method",
+   "name": "__init__",
+   "qualname": "PRFAnalysis.__init__",
+   "source_id": "github.gem.analysis.prf_analysis",
+   "module": "gem.analysis.prf_analysis",
+   "file": "external/github/GEMpRF/gem/analysis/prf_analysis.py",
+   "line": 24,
+   "doc": "",
+   "signature": "(self, prf_space, stimulus)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.analysis.prf_analysis::PRFAnalysis.prf_points",
+   "kind": "method",
+   "name": "prf_points",
+   "qualname": "PRFAnalysis.prf_points",
+   "source_id": "github.gem.analysis.prf_analysis",
+   "module": "gem.analysis.prf_analysis",
+   "file": "external/github/GEMpRF/gem/analysis/prf_analysis.py",
+   "line": 33,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.analysis.prf_analysis::PRFAnalysis.stimulus",
+   "kind": "method",
+   "name": "stimulus",
+   "qualname": "PRFAnalysis.stimulus",
+   "source_id": "github.gem.analysis.prf_analysis",
+   "module": "gem.analysis.prf_analysis",
+   "file": "external/github/GEMpRF/gem/analysis/prf_analysis.py",
+   "line": 37,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.analysis.prf_analysis::PRFAnalysis.orthonormalized_S_batches",
+   "kind": "method",
+   "name": "orthonormalized_S_batches",
+   "qualname": "PRFAnalysis.orthonormalized_S_batches",
+   "source_id": "github.gem.analysis.prf_analysis",
+   "module": "gem.analysis.prf_analysis",
+   "file": "external/github/GEMpRF/gem/analysis/prf_analysis.py",
+   "line": 41,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.analysis.prf_analysis::PRFAnalysis.orthonormalized_S_batches",
+   "kind": "method",
+   "name": "orthonormalized_S_batches",
+   "qualname": "PRFAnalysis.orthonormalized_S_batches",
+   "source_id": "github.gem.analysis.prf_analysis",
+   "module": "gem.analysis.prf_analysis",
+   "file": "external/github/GEMpRF/gem/analysis/prf_analysis.py",
+   "line": 45,
+   "doc": "",
+   "signature": "(self, new_value)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.analysis.prf_analysis::PRFAnalysis.orthonormalized_dS_dtheta_batches_list",
+   "kind": "method",
+   "name": "orthonormalized_dS_dtheta_batches_list",
+   "qualname": "PRFAnalysis.orthonormalized_dS_dtheta_batches_list",
+   "source_id": "github.gem.analysis.prf_analysis",
+   "module": "gem.analysis.prf_analysis",
+   "file": "external/github/GEMpRF/gem/analysis/prf_analysis.py",
+   "line": 49,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.analysis.prf_analysis::PRFAnalysis.orthonormalized_dS_dtheta_batches_list",
+   "kind": "method",
+   "name": "orthonormalized_dS_dtheta_batches_list",
+   "qualname": "PRFAnalysis.orthonormalized_dS_dtheta_batches_list",
+   "source_id": "github.gem.analysis.prf_analysis",
+   "module": "gem.analysis.prf_analysis",
+   "file": "external/github/GEMpRF/gem/analysis/prf_analysis.py",
+   "line": 53,
+   "doc": "",
+   "signature": "(self, new_value)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.analysis.prf_analysis::PRFAnalysis.error_e",
+   "kind": "method",
+   "name": "error_e",
+   "qualname": "PRFAnalysis.error_e",
+   "source_id": "github.gem.analysis.prf_analysis",
+   "module": "gem.analysis.prf_analysis",
+   "file": "external/github/GEMpRF/gem/analysis/prf_analysis.py",
+   "line": 57,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.analysis.prf_analysis::PRFAnalysis.error_e",
+   "kind": "method",
+   "name": "error_e",
+   "qualname": "PRFAnalysis.error_e",
+   "source_id": "github.gem.analysis.prf_analysis",
+   "module": "gem.analysis.prf_analysis",
+   "file": "external/github/GEMpRF/gem/analysis/prf_analysis.py",
+   "line": 61,
+   "doc": "",
+   "signature": "(self, new_value)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.analysis.prf_analysis::PRFAnalysis.error_de_dtheta_list",
+   "kind": "method",
+   "name": "error_de_dtheta_list",
+   "qualname": "PRFAnalysis.error_de_dtheta_list",
+   "source_id": "github.gem.analysis.prf_analysis",
+   "module": "gem.analysis.prf_analysis",
+   "file": "external/github/GEMpRF/gem/analysis/prf_analysis.py",
+   "line": 65,
+   "doc": "",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.analysis.prf_analysis::PRFAnalysis.error_de_dtheta_list",
+   "kind": "method",
+   "name": "error_de_dtheta_list",
+   "qualname": "PRFAnalysis.error_de_dtheta_list",
+   "source_id": "github.gem.analysis.prf_analysis",
+   "module": "gem.analysis.prf_analysis",
+   "file": "external/github/GEMpRF/gem/analysis/prf_analysis.py",
+   "line": 69,
+   "doc": "",
+   "signature": "(self, new_value)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.analysis.prf_r2_variance_explain::gem.analysis.prf_r2_variance_explain",
+   "kind": "module",
+   "name": "prf_r2_variance_explain",
+   "qualname": "gem.analysis.prf_r2_variance_explain",
+   "source_id": "github.gem.analysis.prf_r2_variance_explain",
+   "module": "gem.analysis.prf_r2_variance_explain",
+   "file": "external/github/GEMpRF/gem/analysis/prf_r2_variance_explain.py",
+   "line": 1,
+   "doc": "",
+   "contains": [
+    "R2"
+   ],
+   "imports": [
+    "numpy",
+    "cupy",
+    "gem.tools.json_file_operations",
+    "gem.utils.hpc_cupy_utils",
+    "gem.model",
+    "gem.signals.signal_synthesizer",
+    "gem.model.prf_model",
+    "gem.utils.gem_gpu_manager"
+   ]
+  },
+  {
+   "id": "github.gem.analysis.prf_r2_variance_explain::R2",
+   "kind": "class",
+   "name": "R2",
+   "qualname": "R2",
+   "source_id": "github.gem.analysis.prf_r2_variance_explain",
+   "module": "gem.analysis.prf_r2_variance_explain",
+   "file": "external/github/GEMpRF/gem/analysis/prf_r2_variance_explain.py",
+   "line": 10,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "get_r2_new_method_with_epsilon_as_Fx",
+    "get_r2_num_den_method_with_epsilon_as_yTs",
+    "get_r2_numerator_denominator_terms",
+    "format_in_json_format"
+   ]
+  },
+  {
+   "id": "github.gem.analysis.prf_r2_variance_explain::R2.get_r2_new_method_with_epsilon_as_Fx",
+   "kind": "method",
+   "name": "get_r2_new_method_with_epsilon_as_Fx",
+   "qualname": "R2.get_r2_new_method_with_epsilon_as_Fx",
+   "source_id": "github.gem.analysis.prf_r2_variance_explain",
+   "module": "gem.analysis.prf_r2_variance_explain",
+   "file": "external/github/GEMpRF/gem/analysis/prf_r2_variance_explain.py",
+   "line": 12,
+   "doc": "",
+   "signature": "(cls, Y_signals_gpu, O_gpu, epsilon_results_cpu)",
+   "calls": [
+    "range",
+    "append",
+    "float"
+   ]
+  },
+  {
+   "id": "github.gem.analysis.prf_r2_variance_explain::R2.get_r2_num_den_method_with_epsilon_as_yTs",
+   "kind": "method",
+   "name": "get_r2_num_den_method_with_epsilon_as_yTs",
+   "qualname": "R2.get_r2_num_den_method_with_epsilon_as_yTs",
+   "source_id": "github.gem.analysis.prf_r2_variance_explain",
+   "module": "gem.analysis.prf_r2_variance_explain",
+   "file": "external/github/GEMpRF/gem/analysis/prf_r2_variance_explain.py",
+   "line": 30,
+   "doc": "",
+   "signature": "(cls, Y_signals_gpu, O_gpu, refined_matching_results, refined_S_cpu)",
+   "calls": [
+    "Device",
+    "get_r2_numerator_denominator_terms",
+    "asnumpy",
+    "get_instance"
+   ]
+  },
+  {
+   "id": "github.gem.analysis.prf_r2_variance_explain::R2.get_r2_numerator_denominator_terms",
+   "kind": "method",
+   "name": "get_r2_numerator_denominator_terms",
+   "qualname": "R2.get_r2_numerator_denominator_terms",
+   "source_id": "github.gem.analysis.prf_r2_variance_explain",
+   "module": "gem.analysis.prf_r2_variance_explain",
+   "file": "external/github/GEMpRF/gem/analysis/prf_r2_variance_explain.py",
+   "line": 38,
+   "doc": "",
+   "signature": "(cls, Y_signals_gpu, O_gpu, refined_matching_results, refined_signals_cpu)",
+   "calls": [
+    "Device",
+    "asarray",
+    "where",
+    "get_instance",
+    "isnan"
+   ]
+  },
+  {
+   "id": "github.gem.analysis.prf_r2_variance_explain::R2.format_in_json_format",
+   "kind": "method",
+   "name": "format_in_json_format",
+   "qualname": "R2.format_in_json_format",
+   "source_id": "github.gem.analysis.prf_r2_variance_explain",
+   "module": "gem.analysis.prf_r2_variance_explain",
+   "file": "external/github/GEMpRF/gem/analysis/prf_r2_variance_explain.py",
+   "line": 87,
+   "doc": "",
+   "signature": "(cls, r2_results, refined_matching_results, refined_signal_timecourses, refined_signals_present=...)",
+   "calls": [
+    "range",
+    "float",
+    "args2jsonEntry",
+    "append",
+    "array"
+   ]
+  },
+  {
+   "id": "github.gem.configs.gem_xml_utils::gem.configs.gem_xml_utils",
+   "kind": "module",
+   "name": "gem_xml_utils",
+   "qualname": "gem.configs.gem_xml_utils",
+   "source_id": "github.gem.configs.gem_xml_utils",
+   "module": "gem.configs.gem_xml_utils",
+   "file": "external/github/GEMpRF/gem/configs/gem_xml_utils.py",
+   "line": 1,
+   "doc": "",
+   "contains": [
+    "XMLUtils"
+   ],
+   "imports": [
+    "json",
+    "os",
+    "xml"
+   ]
+  },
+  {
+   "id": "github.gem.configs.gem_xml_utils::XMLUtils",
+   "kind": "class",
+   "name": "XMLUtils",
+   "qualname": "XMLUtils",
+   "source_id": "github.gem.configs.gem_xml_utils",
+   "module": "gem.configs.gem_xml_utils",
+   "file": "external/github/GEMpRF/gem/configs/gem_xml_utils.py",
+   "line": 5,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "update_xml_node_value",
+    "update_xml_node_attribute"
+   ]
+  },
+  {
+   "id": "github.gem.configs.gem_xml_utils::XMLUtils.update_xml_node_value",
+   "kind": "method",
+   "name": "update_xml_node_value",
+   "qualname": "XMLUtils.update_xml_node_value",
+   "source_id": "github.gem.configs.gem_xml_utils",
+   "module": "gem.configs.gem_xml_utils",
+   "file": "external/github/GEMpRF/gem/configs/gem_xml_utils.py",
+   "line": 7,
+   "doc": "",
+   "signature": "(cls, xml_filepath, xpath, new_value)",
+   "calls": [
+    "parse",
+    "getroot",
+    "find",
+    "write"
+   ]
+  },
+  {
+   "id": "github.gem.configs.gem_xml_utils::XMLUtils.update_xml_node_attribute",
+   "kind": "method",
+   "name": "update_xml_node_attribute",
+   "qualname": "XMLUtils.update_xml_node_attribute",
+   "source_id": "github.gem.configs.gem_xml_utils",
+   "module": "gem.configs.gem_xml_utils",
+   "file": "external/github/GEMpRF/gem/configs/gem_xml_utils.py",
+   "line": 20,
+   "doc": "",
+   "signature": "(cls, xml_filepath, xpath, attribute_name, new_attribute_value)",
+   "calls": [
+    "parse",
+    "getroot",
+    "find",
+    "write"
+   ]
+  },
+  {
+   "id": "github.gem.data.diagnostic_bids_tree::gem.data.diagnostic_bids_tree",
+   "kind": "module",
+   "name": "diagnostic_bids_tree",
+   "qualname": "gem.data.diagnostic_bids_tree",
+   "source_id": "github.gem.data.diagnostic_bids_tree",
+   "module": "gem.data.diagnostic_bids_tree",
+   "file": "external/github/GEMpRF/gem/data/diagnostic_bids_tree.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "DiagnosticBidsTree"
+   ],
+   "imports": [
+    "os",
+    "gem.utils.logger"
+   ]
+  },
+  {
+   "id": "github.gem.data.diagnostic_bids_tree::DiagnosticBidsTree",
+   "kind": "class",
+   "name": "DiagnosticBidsTree",
+   "qualname": "DiagnosticBidsTree",
+   "source_id": "github.gem.data.diagnostic_bids_tree",
+   "module": "gem.data.diagnostic_bids_tree",
+   "file": "external/github/GEMpRF/gem/data/diagnostic_bids_tree.py",
+   "line": 32,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "collect_bids_diagnostics",
+    "print_bids_diagnostic_tree"
+   ]
+  },
+  {
+   "id": "github.gem.data.diagnostic_bids_tree::DiagnosticBidsTree.collect_bids_diagnostics",
+   "kind": "method",
+   "name": "collect_bids_diagnostics",
+   "qualname": "DiagnosticBidsTree.collect_bids_diagnostics",
+   "source_id": "github.gem.data.diagnostic_bids_tree",
+   "module": "gem.data.diagnostic_bids_tree",
+   "file": "external/github/GEMpRF/gem/data/diagnostic_bids_tree.py",
+   "line": 34,
+   "doc": "",
+   "signature": "(cls, base_path)",
+   "calls": [
+    "sorted",
+    "isdir",
+    "join",
+    "listdir",
+    "startswith"
+   ]
+  },
+  {
+   "id": "github.gem.data.diagnostic_bids_tree::DiagnosticBidsTree.print_bids_diagnostic_tree",
+   "kind": "method",
+   "name": "print_bids_diagnostic_tree",
+   "qualname": "DiagnosticBidsTree.print_bids_diagnostic_tree",
+   "source_id": "github.gem.data.diagnostic_bids_tree",
+   "module": "gem.data.diagnostic_bids_tree",
+   "file": "external/github/GEMpRF/gem/data/diagnostic_bids_tree.py",
+   "line": 83,
+   "doc": "",
+   "signature": "(cls, diag, analysis_list, sub_list, ses_list, run_list, task_list, hemi_list, space_list, file_extension)",
+   "calls": [
+    "print_green_message",
+    "print",
+    "ellip",
+    "enumerate",
+    "print_red_message",
+    "file_filtered_reasons",
+    "append",
+    "endswith",
+    "split",
+    "join"
+   ]
+  },
+  {
+   "id": "github.gem.data.gem_bids_concatenation_data_info::gem.data.gem_bids_concatenation_data_info",
+   "kind": "module",
+   "name": "gem_bids_concatenation_data_info",
+   "qualname": "gem.data.gem_bids_concatenation_data_info",
+   "source_id": "github.gem.data.gem_bids_concatenation_data_info",
+   "module": "gem.data.gem_bids_concatenation_data_info",
+   "file": "external/github/GEMpRF/gem/data/gem_bids_concatenation_data_info.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "BidsConcatenationDataInfo"
+   ],
+   "imports": [
+    "gem.data.gem_stimulus_file_info"
+   ]
+  },
+  {
+   "id": "github.gem.data.gem_bids_concatenation_data_info::BidsConcatenationDataInfo",
+   "kind": "class",
+   "name": "BidsConcatenationDataInfo",
+   "qualname": "BidsConcatenationDataInfo",
+   "source_id": "github.gem.data.gem_bids_concatenation_data_info",
+   "module": "gem.data.gem_bids_concatenation_data_info",
+   "file": "external/github/GEMpRF/gem/data/gem_bids_concatenation_data_info.py",
+   "line": 14,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "__init__",
+    "compare_and_merge_data_info_dicts"
+   ]
+  },
+  {
+   "id": "github.gem.data.gem_bids_concatenation_data_info::BidsConcatenationDataInfo.__init__",
+   "kind": "method",
+   "name": "__init__",
+   "qualname": "BidsConcatenationDataInfo.__init__",
+   "source_id": "github.gem.data.gem_bids_concatenation_data_info",
+   "module": "gem.data.gem_bids_concatenation_data_info",
+   "file": "external/github/GEMpRF/gem/data/gem_bids_concatenation_data_info.py",
+   "line": 15,
+   "doc": "",
+   "signature": "(self, input_filepaths_to_be_concatenated, input_data_info_to_be_concatenated_data_info, all_stimulus_info, concatenation_result_data_info, concatenation_result_filepath)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.data.gem_bids_concatenation_data_info::BidsConcatenationDataInfo.compare_and_merge_data_info_dicts",
+   "kind": "method",
+   "name": "compare_and_merge_data_info_dicts",
+   "qualname": "BidsConcatenationDataInfo.compare_and_merge_data_info_dicts",
+   "source_id": "github.gem.data.gem_bids_concatenation_data_info",
+   "module": "gem.data.gem_bids_concatenation_data_info",
+   "file": "external/github/GEMpRF/gem/data/gem_bids_concatenation_data_info.py",
+   "line": 27,
+   "doc": "",
+   "signature": "(cls, data_info_dictionaries)",
+   "calls": [
+    "union",
+    "copy",
+    "join"
+   ]
+  },
+  {
+   "id": "github.gem.data.gem_bids_individual_run_data_info::gem.data.gem_bids_individual_run_data_info",
+   "kind": "module",
+   "name": "gem_bids_individual_run_data_info",
+   "qualname": "gem.data.gem_bids_individual_run_data_info",
+   "source_id": "github.gem.data.gem_bids_individual_run_data_info",
+   "module": "gem.data.gem_bids_individual_run_data_info",
+   "file": "external/github/GEMpRF/gem/data/gem_bids_individual_run_data_info.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [],
+   "imports": []
+  },
+  {
+   "id": "github.gem.data.gem_stimulus_file_info::gem.data.gem_stimulus_file_info",
+   "kind": "module",
+   "name": "gem_stimulus_file_info",
+   "qualname": "gem.data.gem_stimulus_file_info",
+   "source_id": "github.gem.data.gem_stimulus_file_info",
+   "module": "gem.data.gem_stimulus_file_info",
+   "file": "external/github/GEMpRF/gem/data/gem_stimulus_file_info.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "StimulusFileInfo"
+   ],
+   "imports": []
+  },
+  {
+   "id": "github.gem.data.gem_stimulus_file_info::StimulusFileInfo",
+   "kind": "class",
+   "name": "StimulusFileInfo",
+   "qualname": "StimulusFileInfo",
+   "source_id": "github.gem.data.gem_stimulus_file_info",
+   "module": "gem.data.gem_stimulus_file_info",
+   "file": "external/github/GEMpRF/gem/data/gem_stimulus_file_info.py",
+   "line": 12,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "__init__"
+   ]
+  },
+  {
+   "id": "github.gem.data.gem_stimulus_file_info::StimulusFileInfo.__init__",
+   "kind": "method",
+   "name": "__init__",
+   "qualname": "StimulusFileInfo.__init__",
+   "source_id": "github.gem.data.gem_stimulus_file_info",
+   "module": "gem.data.gem_stimulus_file_info",
+   "file": "external/github/GEMpRF/gem/data/gem_stimulus_file_info.py",
+   "line": 13,
+   "doc": "",
+   "signature": "(self, stimulus_dir, stimulus_filename, stimulus_task)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.data.observed_data::gem.data.observed_data",
+   "kind": "module",
+   "name": "observed_data",
+   "qualname": "gem.data.observed_data",
+   "source_id": "github.gem.data.observed_data",
+   "module": "gem.data.observed_data",
+   "file": "external/github/GEMpRF/gem/data/observed_data.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "DataSource",
+    "ObservedData"
+   ],
+   "imports": [
+    "nibabel",
+    "enum",
+    "numpy",
+    "gem.utils.logger"
+   ]
+  },
+  {
+   "id": "github.gem.data.observed_data::DataSource",
+   "kind": "class",
+   "name": "DataSource",
+   "qualname": "DataSource",
+   "source_id": "github.gem.data.observed_data",
+   "module": "gem.data.observed_data",
+   "file": "external/github/GEMpRF/gem/data/observed_data.py",
+   "line": 18,
+   "doc": "",
+   "bases": [
+    "Enum"
+   ],
+   "contains": []
+  },
+  {
+   "id": "github.gem.data.observed_data::ObservedData",
+   "kind": "class",
+   "name": "ObservedData",
+   "qualname": "ObservedData",
+   "source_id": "github.gem.data.observed_data",
+   "module": "gem.data.observed_data",
+   "file": "external/github/GEMpRF/gem/data/observed_data.py",
+   "line": 22,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "__init__",
+    "get_y_signals",
+    "_load_data_from_file"
+   ]
+  },
+  {
+   "id": "github.gem.data.observed_data::ObservedData.__init__",
+   "kind": "method",
+   "name": "__init__",
+   "qualname": "ObservedData.__init__",
+   "source_id": "github.gem.data.observed_data",
+   "module": "gem.data.observed_data",
+   "file": "external/github/GEMpRF/gem/data/observed_data.py",
+   "line": 23,
+   "doc": "",
+   "signature": "(self, data_source)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.data.observed_data::ObservedData.get_y_signals",
+   "kind": "method",
+   "name": "get_y_signals",
+   "qualname": "ObservedData.get_y_signals",
+   "source_id": "github.gem.data.observed_data",
+   "module": "gem.data.observed_data",
+   "file": "external/github/GEMpRF/gem/data/observed_data.py",
+   "line": 26,
+   "doc": "",
+   "signature": "(self, filepath)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.data.observed_data::ObservedData._load_data_from_file",
+   "kind": "method",
+   "name": "_load_data_from_file",
+   "qualname": "ObservedData._load_data_from_file",
+   "source_id": "github.gem.data.observed_data",
+   "module": "gem.data.observed_data",
+   "file": "external/github/GEMpRF/gem/data/observed_data.py",
+   "line": 32,
+   "doc": "",
+   "signature": "(self, filepath)",
+   "calls": [
+    "load",
+    "isinstance",
+    "reshape",
+    "print_yellow_message",
+    "column_stack",
+    "get_fdata"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_coefficient_matrix::gem.fitting.hpc_coefficient_matrix",
+   "kind": "module",
+   "name": "hpc_coefficient_matrix",
+   "qualname": "gem.fitting.hpc_coefficient_matrix",
+   "source_id": "github.gem.fitting.hpc_coefficient_matrix",
+   "module": "gem.fitting.hpc_coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_coefficient_matrix.py",
+   "line": 1,
+   "doc": "",
+   "contains": [
+    "CoefficientMatrix"
+   ],
+   "imports": [
+    "numpy"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_coefficient_matrix::CoefficientMatrix",
+   "kind": "class",
+   "name": "CoefficientMatrix",
+   "qualname": "CoefficientMatrix",
+   "source_id": "github.gem.fitting.hpc_coefficient_matrix",
+   "module": "gem.fitting.hpc_coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_coefficient_matrix.py",
+   "line": 3,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "create_cofficients_matrices_A_and_B",
+    "create_cofficients_matrices_A_B_and_C",
+    "create_cofficients_matrices_A_B_and_C_vectorized",
+    "get_block_indices",
+    "get_block_indices_new",
+    "get_block_indices_with_Sigma",
+    "_get_block_mean_pairs",
+    "_vecX2M",
+    "_vecX2M_with_fx",
+    "Grids2MpInv",
+    "Grids2MpInv_org"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_coefficient_matrix::CoefficientMatrix.create_cofficients_matrices_A_and_B",
+   "kind": "method",
+   "name": "create_cofficients_matrices_A_and_B",
+   "qualname": "CoefficientMatrix.create_cofficients_matrices_A_and_B",
+   "source_id": "github.gem.fitting.hpc_coefficient_matrix",
+   "module": "gem.fitting.hpc_coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_coefficient_matrix.py",
+   "line": 5,
+   "doc": "A =[[a11    a12     a13]",
+   "signature": "(cls, coefficients)",
+   "calls": [
+    "array"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_coefficient_matrix::CoefficientMatrix.create_cofficients_matrices_A_B_and_C",
+   "kind": "method",
+   "name": "create_cofficients_matrices_A_B_and_C",
+   "qualname": "CoefficientMatrix.create_cofficients_matrices_A_B_and_C",
+   "source_id": "github.gem.fitting.hpc_coefficient_matrix",
+   "module": "gem.fitting.hpc_coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_coefficient_matrix.py",
+   "line": 22,
+   "doc": "A =[[a11    a12     a13]",
+   "signature": "(cls, coefficients)",
+   "calls": [
+    "array"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_coefficient_matrix::CoefficientMatrix.create_cofficients_matrices_A_B_and_C_vectorized",
+   "kind": "method",
+   "name": "create_cofficients_matrices_A_B_and_C_vectorized",
+   "qualname": "CoefficientMatrix.create_cofficients_matrices_A_B_and_C_vectorized",
+   "source_id": "github.gem.fitting.hpc_coefficient_matrix",
+   "module": "gem.fitting.hpc_coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_coefficient_matrix.py",
+   "line": 41,
+   "doc": "A =[[a11    a12     a13]",
+   "signature": "(cls, coefficients)",
+   "calls": [
+    "stack"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_coefficient_matrix::CoefficientMatrix.get_block_indices",
+   "kind": "method",
+   "name": "get_block_indices",
+   "qualname": "CoefficientMatrix.get_block_indices",
+   "source_id": "github.gem.fitting.hpc_coefficient_matrix",
+   "module": "gem.fitting.hpc_coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_coefficient_matrix.py",
+   "line": 72,
+   "doc": "",
+   "signature": "(cls, row, col, nRows, nCols, distance=...)",
+   "calls": [
+    "linspace",
+    "meshgrid",
+    "vstack",
+    "flatten"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_coefficient_matrix::CoefficientMatrix.get_block_indices_new",
+   "kind": "method",
+   "name": "get_block_indices_new",
+   "qualname": "CoefficientMatrix.get_block_indices_new",
+   "source_id": "github.gem.fitting.hpc_coefficient_matrix",
+   "module": "gem.fitting.hpc_coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_coefficient_matrix.py",
+   "line": 87,
+   "doc": "",
+   "signature": "(cls, row, col, nRows, nCols, distance=...)",
+   "calls": [
+    "linspace",
+    "meshgrid",
+    "vstack",
+    "flatten"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_coefficient_matrix::CoefficientMatrix.get_block_indices_with_Sigma",
+   "kind": "method",
+   "name": "get_block_indices_with_Sigma",
+   "qualname": "CoefficientMatrix.get_block_indices_with_Sigma",
+   "source_id": "github.gem.fitting.hpc_coefficient_matrix",
+   "module": "gem.fitting.hpc_coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_coefficient_matrix.py",
+   "line": 102,
+   "doc": "",
+   "signature": "(cls, row, col, frame, nRows, nCols, nFrames, distance=...)",
+   "calls": [
+    "linspace",
+    "meshgrid",
+    "vstack",
+    "flatten"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_coefficient_matrix::CoefficientMatrix._get_block_mean_pairs",
+   "kind": "method",
+   "name": "_get_block_mean_pairs",
+   "qualname": "CoefficientMatrix._get_block_mean_pairs",
+   "source_id": "github.gem.fitting.hpc_coefficient_matrix",
+   "module": "gem.fitting.hpc_coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_coefficient_matrix.py",
+   "line": 119,
+   "doc": "",
+   "signature": "(cls, row, col, frame, mu_X, mu_Y, sigma_grid, distance=...)",
+   "calls": [
+    "get_block_indices_with_Sigma",
+    "vstack",
+    "astype"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_coefficient_matrix::CoefficientMatrix._vecX2M",
+   "kind": "method",
+   "name": "_vecX2M",
+   "qualname": "CoefficientMatrix._vecX2M",
+   "source_id": "github.gem.fitting.hpc_coefficient_matrix",
+   "module": "gem.fitting.hpc_coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_coefficient_matrix.py",
+   "line": 139,
+   "doc": "",
+   "signature": "(cls, vecX)",
+   "calls": [
+    "array"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_coefficient_matrix::CoefficientMatrix._vecX2M_with_fx",
+   "kind": "method",
+   "name": "_vecX2M_with_fx",
+   "qualname": "CoefficientMatrix._vecX2M_with_fx",
+   "source_id": "github.gem.fitting.hpc_coefficient_matrix",
+   "module": "gem.fitting.hpc_coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_coefficient_matrix.py",
+   "line": 146,
+   "doc": "",
+   "signature": "(cls, vecX)",
+   "calls": [
+    "array"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_coefficient_matrix::CoefficientMatrix.Grids2MpInv",
+   "kind": "method",
+   "name": "Grids2MpInv",
+   "qualname": "CoefficientMatrix.Grids2MpInv",
+   "source_id": "github.gem.fitting.hpc_coefficient_matrix",
+   "module": "gem.fitting.hpc_coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_coefficient_matrix.py",
+   "line": 156,
+   "doc": "",
+   "signature": "(cls, mu_X_grid, mu_Y_grid, sigma_grid)",
+   "calls": [
+    "empty",
+    "range",
+    "vstack",
+    "pinv"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_coefficient_matrix::CoefficientMatrix.Grids2MpInv_org",
+   "kind": "method",
+   "name": "Grids2MpInv_org",
+   "qualname": "CoefficientMatrix.Grids2MpInv_org",
+   "source_id": "github.gem.fitting.hpc_coefficient_matrix",
+   "module": "gem.fitting.hpc_coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_coefficient_matrix.py",
+   "line": 176,
+   "doc": "",
+   "signature": "(cls, mu_X_grid, mu_Y_grid)",
+   "calls": [
+    "empty",
+    "range",
+    "vstack",
+    "pinv"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_grid_fit::gem.fitting.hpc_grid_fit",
+   "kind": "module",
+   "name": "hpc_grid_fit",
+   "qualname": "gem.fitting.hpc_grid_fit",
+   "source_id": "github.gem.fitting.hpc_grid_fit",
+   "module": "gem.fitting.hpc_grid_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_grid_fit.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "GridFit"
+   ],
+   "imports": [
+    "numpy",
+    "matplotlib",
+    "cupy",
+    "gem.utils.gem_gpu_manager"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_grid_fit::GridFit",
+   "kind": "class",
+   "name": "GridFit",
+   "qualname": "GridFit",
+   "source_id": "github.gem.fitting.hpc_grid_fit",
+   "module": "gem.fitting.hpc_grid_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_grid_fit.py",
+   "line": 16,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "compute_error_term",
+    "_compute_derivative_error_term",
+    "_compute_best_projection_fit",
+    "_get_error_terms_from_batches",
+    "_get_only_error_terms_from_batches",
+    "get_error_terms",
+    "get_only_error_terms"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_grid_fit::GridFit.compute_error_term",
+   "kind": "method",
+   "name": "compute_error_term",
+   "qualname": "GridFit.compute_error_term",
+   "source_id": "github.gem.fitting.hpc_grid_fit",
+   "module": "gem.fitting.hpc_grid_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_grid_fit.py",
+   "line": 18,
+   "doc": "",
+   "signature": "(cls, Y_signals_gpu, S_prime_columnmajor_gpu)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.fitting.hpc_grid_fit::GridFit._compute_derivative_error_term",
+   "kind": "method",
+   "name": "_compute_derivative_error_term",
+   "qualname": "GridFit._compute_derivative_error_term",
+   "source_id": "github.gem.fitting.hpc_grid_fit",
+   "module": "gem.fitting.hpc_grid_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_grid_fit.py",
+   "line": 23,
+   "doc": "",
+   "signature": "(cls, isResultOnGPU, Y_signals_gpu, dS_prime_dtheta_columnmajor_gpu, e_gpu)",
+   "calls": [
+    "asnumpy"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_grid_fit::GridFit._compute_best_projection_fit",
+   "kind": "method",
+   "name": "_compute_best_projection_fit",
+   "qualname": "GridFit._compute_best_projection_fit",
+   "source_id": "github.gem.fitting.hpc_grid_fit",
+   "module": "gem.fitting.hpc_grid_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_grid_fit.py",
+   "line": 29,
+   "doc": "",
+   "signature": "(cls, e_gpu)",
+   "calls": [
+    "nanargmax"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_grid_fit::GridFit._get_error_terms_from_batches",
+   "kind": "method",
+   "name": "_get_error_terms_from_batches",
+   "qualname": "GridFit._get_error_terms_from_batches",
+   "source_id": "github.gem.fitting.hpc_grid_fit",
+   "module": "gem.fitting.hpc_grid_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_grid_fit.py",
+   "line": 34,
+   "doc": "",
+   "signature": "(cls, isResultOnGPU, Y_signals_gpu, S_prime_cm_gpu_batches, dS_prime_dtheta_cm_gpu_batches_list)",
+   "calls": [
+    "range",
+    "get_instance",
+    "Device",
+    "zeros",
+    "compute_error_term",
+    "array",
+    "isinf",
+    "asarray"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_grid_fit::GridFit._get_only_error_terms_from_batches",
+   "kind": "method",
+   "name": "_get_only_error_terms_from_batches",
+   "qualname": "GridFit._get_only_error_terms_from_batches",
+   "source_id": "github.gem.fitting.hpc_grid_fit",
+   "module": "gem.fitting.hpc_grid_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_grid_fit.py",
+   "line": 101,
+   "doc": "",
+   "signature": "(cls, Y_signals_gpu, S_prime_columnmajor_gpu_batches)",
+   "calls": [
+    "range",
+    "zeros",
+    "Device",
+    "compute_error_term",
+    "array"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_grid_fit::GridFit.get_error_terms",
+   "kind": "method",
+   "name": "get_error_terms",
+   "qualname": "GridFit.get_error_terms",
+   "source_id": "github.gem.fitting.hpc_grid_fit",
+   "module": "gem.fitting.hpc_grid_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_grid_fit.py",
+   "line": 140,
+   "doc": "",
+   "signature": "(cls, isResultOnGPU, Y_signals_gpu, S_prime_cm_batches_gpu, dS_prime_dtheta_cm_batches_list_gpu)",
+   "calls": [
+    "Device",
+    "asnumpy",
+    "nanargmax",
+    "get_instance",
+    "isinf",
+    "asarray"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_grid_fit::GridFit.get_only_error_terms",
+   "kind": "method",
+   "name": "get_only_error_terms",
+   "qualname": "GridFit.get_only_error_terms",
+   "source_id": "github.gem.fitting.hpc_grid_fit",
+   "module": "gem.fitting.hpc_grid_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_grid_fit.py",
+   "line": 167,
+   "doc": "",
+   "signature": "(cls, isResultOnGPU, Y_signals_gpu, S_prime_cm_batches_gpu, dS_prime_dtheta_cm_batches_list_gpu)",
+   "calls": [
+    "get_error_terms",
+    "asnumpy",
+    "execute_cupy_func_on_default",
+    "get_instance"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::gem.fitting.hpc_refine_fit",
+   "kind": "module",
+   "name": "hpc_refine_fit",
+   "qualname": "gem.fitting.hpc_refine_fit",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 1,
+   "doc": "",
+   "contains": [
+    "RefineFit"
+   ],
+   "imports": [
+    "numpy",
+    "matplotlib",
+    "scipy.ndimage",
+    "cupy",
+    "gem.space.PRFSpace",
+    "gem.fitting.hpc_coefficient_matrix",
+    "gem.utils.hpc_cupy_utils",
+    "gem.utils.gem_gpu_manager",
+    "nibabel",
+    "os"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit",
+   "kind": "class",
+   "name": "RefineFit",
+   "qualname": "RefineFit",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 17,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "_prepare_padded_arrays",
+    "get_refined_fit_results",
+    "_compute_coefficients",
+    "get_refined_fit_results_simpler_padded_arrays",
+    "get_refined_fit_results_cpu_loop_based",
+    "get_non_nan_row_indices",
+    "compute_fx",
+    "compute_fx_and_gradients",
+    "save_data_to_nifiti",
+    "get_all_debug_info_error_terms_after_refinement",
+    "get_error_terms_after_refinement",
+    "_get_orthonormalize_refined_signals_for_debug",
+    "_get_orthonormalize_refined_signals",
+    "_compute_refined_error_term_for_debug",
+    "_compute_refined_derivative_error_term_cpu_for_debug"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit._prepare_padded_arrays",
+   "kind": "method",
+   "name": "_prepare_padded_arrays",
+   "qualname": "RefineFit._prepare_padded_arrays",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 22,
+   "doc": "Prepare padded arrays for arr_2d_location_inv_M and multi_dim_points_neighbours.",
+   "signature": "(cls, arr_2d_location_inv_M_cpu, prf_space, on_gpu)",
+   "calls": [
+    "array",
+    "stack",
+    "cumsum",
+    "range",
+    "ravel",
+    "concatenate",
+    "reshape",
+    "asarray",
+    "repeat",
+    "append",
+    "insert",
+    "astype"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit.get_refined_fit_results",
+   "kind": "method",
+   "name": "get_refined_fit_results",
+   "qualname": "RefineFit.get_refined_fit_results",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 76,
+   "doc": "",
+   "signature": "(cls, prf_space, num_Y_signals, best_fit_proj, arr_2d_location_inv_M_cpu, e_full, de_dtheta_3darr)",
+   "calls": [
+    "isinstance",
+    "squeeze",
+    "reshape",
+    "asarray",
+    "create_cofficients_matrices_A_B_and_C_vectorized",
+    "einsum",
+    "asnumpy",
+    "pinv",
+    "get_full_2_validated_indices"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit._compute_coefficients",
+   "kind": "method",
+   "name": "_compute_coefficients",
+   "qualname": "RefineFit._compute_coefficients",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 110,
+   "doc": "Compute coefficients with intermediate arrays freed early.",
+   "signature": "(cls, pkg, num_Y_signals, e_full, de_dtheta_3darr, validated_indices, MpInv, on_gpu)",
+   "calls": [
+    "transpose",
+    "concatenate",
+    "where",
+    "reshape",
+    "nan_to_num",
+    "einsum",
+    "clip",
+    "arange"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit.get_refined_fit_results_simpler_padded_arrays",
+   "kind": "method",
+   "name": "get_refined_fit_results_simpler_padded_arrays",
+   "qualname": "RefineFit.get_refined_fit_results_simpler_padded_arrays",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 153,
+   "doc": "This is just a leftover function which contains the simpler version of padded arrays creation. It is kept here just for reference.",
+   "signature": "(cls, prf_space, num_Y_signals, best_fit_proj, arr_2d_location_inv_M_cpu, e_full, de_dtheta_3darr)",
+   "calls": [
+    "isinstance",
+    "squeeze",
+    "reshape",
+    "asarray",
+    "transpose",
+    "concatenate",
+    "where",
+    "nan_to_num",
+    "einsum",
+    "create_cofficients_matrices_A_B_and_C_vectorized",
+    "full",
+    "range",
+    "asnumpy",
+    "pinv",
+    "get_full_2_validated_indices",
+    "clip"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit.get_refined_fit_results_cpu_loop_based",
+   "kind": "method",
+   "name": "get_refined_fit_results_cpu_loop_based",
+   "qualname": "RefineFit.get_refined_fit_results_cpu_loop_based",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 229,
+   "doc": "This is a leftover function which contains the CPU version of the refine fit. It is kept here just for reference.",
+   "signature": "(cls, prf_space, num_Y_signals, best_fit_proj_cpu, arr_2d_location_inv_M_cpu, e_full, de_dtheta_list_cpu)",
+   "calls": [
+    "squeeze",
+    "zeros",
+    "range",
+    "get_full_2_validated_indices",
+    "reshape",
+    "create_cofficients_matrices_A_B_and_C",
+    "compute_fx",
+    "append",
+    "array",
+    "type",
+    "get_non_nan_row_indices",
+    "asnumpy",
+    "solve",
+    "get_instance",
+    "Device",
+    "vstack"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit.get_non_nan_row_indices",
+   "kind": "method",
+   "name": "get_non_nan_row_indices",
+   "qualname": "RefineFit.get_non_nan_row_indices",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 307,
+   "doc": "",
+   "signature": "(cls, input_array)",
+   "calls": [
+    "type",
+    "where",
+    "isnan"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit.compute_fx",
+   "kind": "method",
+   "name": "compute_fx",
+   "qualname": "RefineFit.compute_fx",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 321,
+   "doc": "",
+   "signature": "(cls, refined_X, A, B, C)",
+   "calls": [
+    "asarray"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit.compute_fx_and_gradients",
+   "kind": "method",
+   "name": "compute_fx_and_gradients",
+   "qualname": "RefineFit.compute_fx_and_gradients",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 332,
+   "doc": "",
+   "signature": "(cls, refined_X, A, B, C)",
+   "calls": [
+    "asarray"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit.save_data_to_nifiti",
+   "kind": "method",
+   "name": "save_data_to_nifiti",
+   "qualname": "RefineFit.save_data_to_nifiti",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 347,
+   "doc": "",
+   "signature": "(cls, selected_y_signal_idx, X_3d, Y_3d, Sigma_3d, selected_signal_e, selected_signal_de_dx, selected_signal_de_dy, selected_signal_de_dsigma, A, B, C)",
+   "calls": [
+    "array",
+    "reshape",
+    "Nifti1Image",
+    "set_data_dtype",
+    "save",
+    "moveaxis",
+    "range",
+    "print",
+    "dtype",
+    "join",
+    "compute_fx_and_gradients",
+    "append"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit.get_all_debug_info_error_terms_after_refinement",
+   "kind": "method",
+   "name": "get_all_debug_info_error_terms_after_refinement",
+   "qualname": "RefineFit.get_all_debug_info_error_terms_after_refinement",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 426,
+   "doc": "",
+   "signature": "(cls, refined_matching_results, Y_signals_gpu, O_gpu, stimulus, stim_height, stim_width, x_range_cpu, y_range_cpu)",
+   "calls": [
+    "array",
+    "get_raw_module",
+    "get_function",
+    "zeros",
+    "gc_kernel",
+    "dgc_dx_using_args_arrays_cuda_Kernel",
+    "dgc_dy_using_args_arrays_cuda_Kernel",
+    "dgc_dsigma_using_args_arrays_cuda_Kernel",
+    "get_flattened_columnmajor_stimulus_data_gpu",
+    "reshape",
+    "asnumpy",
+    "asarray"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit.get_error_terms_after_refinement",
+   "kind": "method",
+   "name": "get_error_terms_after_refinement",
+   "qualname": "RefineFit.get_error_terms_after_refinement",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 543,
+   "doc": "",
+   "signature": "(cls, refined_matching_results, Y_signals_gpu, O_gpu, stimulus, stim_height, stim_width, x_range_gpu, y_range_gpu)",
+   "calls": [
+    "array",
+    "get_raw_module",
+    "get_function",
+    "zeros",
+    "gc_kernel",
+    "get_flattened_columnmajor_stimulus_data_gpu",
+    "reshape",
+    "asnumpy",
+    "asarray"
+   ]
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit._get_orthonormalize_refined_signals_for_debug",
+   "kind": "method",
+   "name": "_get_orthonormalize_refined_signals_for_debug",
+   "qualname": "RefineFit._get_orthonormalize_refined_signals_for_debug",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 596,
+   "doc": "",
+   "signature": "(cls, O_gpu, S_rowmajor_gpu, dS_dx_rowmajor_gpu, dS_dy_rowmajor_gpu, dS_dsigma_rowmajor_gpu)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit._get_orthonormalize_refined_signals",
+   "kind": "method",
+   "name": "_get_orthonormalize_refined_signals",
+   "qualname": "RefineFit._get_orthonormalize_refined_signals",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 615,
+   "doc": "",
+   "signature": "(cls, O_gpu, S_rowmajor_gpu)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit._compute_refined_error_term_for_debug",
+   "kind": "method",
+   "name": "_compute_refined_error_term_for_debug",
+   "qualname": "RefineFit._compute_refined_error_term_for_debug",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 624,
+   "doc": "",
+   "signature": "(cls, O_gpu, Y_signals_gpu, S_prime_columnmajor_gpu)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.fitting.hpc_refine_fit::RefineFit._compute_refined_derivative_error_term_cpu_for_debug",
+   "kind": "method",
+   "name": "_compute_refined_derivative_error_term_cpu_for_debug",
+   "qualname": "RefineFit._compute_refined_derivative_error_term_cpu_for_debug",
+   "source_id": "github.gem.fitting.hpc_refine_fit",
+   "module": "gem.fitting.hpc_refine_fit",
+   "file": "external/github/GEMpRF/gem/fitting/hpc_refine_fit.py",
+   "line": 629,
+   "doc": "",
+   "signature": "(cls, O_gpu, Y_signals_gpu, dS_prime_dtheta_columnmajor_gpu, e_gpu)",
+   "calls": [
+    "asnumpy"
+   ]
+  },
+  {
+   "id": "github.gem.model.prf_DoG_model::gem.model.prf_DoG_model",
+   "kind": "module",
+   "name": "prf_DoG_model",
+   "qualname": "gem.model.prf_DoG_model",
+   "source_id": "github.gem.model.prf_DoG_model",
+   "module": "gem.model.prf_DoG_model",
+   "file": "external/github/GEMpRF/gem/model/prf_DoG_model.py",
+   "line": 1,
+   "doc": "Created on Tue Feb 20 11:15:29 2024",
+   "contains": [
+    "PRFDoGModel"
+   ],
+   "imports": [
+    "numpy",
+    "cupy",
+    "gem.model.prf_model",
+    "gem.model.selected_prf_model"
+   ]
+  },
+  {
+   "id": "github.gem.model.prf_DoG_model::PRFDoGModel",
+   "kind": "class",
+   "name": "PRFDoGModel",
+   "qualname": "PRFDoGModel",
+   "source_id": "github.gem.model.prf_DoG_model",
+   "module": "gem.model.prf_DoG_model",
+   "file": "external/github/GEMpRF/gem/model/prf_DoG_model.py",
+   "line": 19,
+   "doc": "Extract text from an email.",
+   "bases": [
+    "PRFModel"
+   ],
+   "contains": [
+    "create_model",
+    "extract_text",
+    "model_type"
+   ]
+  },
+  {
+   "id": "github.gem.model.prf_DoG_model::PRFDoGModel.create_model",
+   "kind": "method",
+   "name": "create_model",
+   "qualname": "PRFDoGModel.create_model",
+   "source_id": "github.gem.model.prf_DoG_model",
+   "module": "gem.model.prf_DoG_model",
+   "file": "external/github/GEMpRF/gem/model/prf_DoG_model.py",
+   "line": 21,
+   "doc": "Overrides FormalParserInterface.load_data_source()",
+   "signature": "(self, model_name, file_name)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_DoG_model::PRFDoGModel.extract_text",
+   "kind": "method",
+   "name": "extract_text",
+   "qualname": "PRFDoGModel.extract_text",
+   "source_id": "github.gem.model.prf_DoG_model",
+   "module": "gem.model.prf_DoG_model",
+   "file": "external/github/GEMpRF/gem/model/prf_DoG_model.py",
+   "line": 25,
+   "doc": "Overrides FormalParserInterface.extract_text()",
+   "signature": "(self, full_file_path)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_DoG_model::PRFDoGModel.model_type",
+   "kind": "method",
+   "name": "model_type",
+   "qualname": "PRFDoGModel.model_type",
+   "source_id": "github.gem.model.prf_DoG_model",
+   "module": "gem.model.prf_DoG_model",
+   "file": "external/github/GEMpRF/gem/model/prf_DoG_model.py",
+   "line": 30,
+   "doc": "Overrides FormalParserInterface.model_type()",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_gaussian_model::gem.model.prf_gaussian_model",
+   "kind": "module",
+   "name": "prf_gaussian_model",
+   "qualname": "gem.model.prf_gaussian_model",
+   "source_id": "github.gem.model.prf_gaussian_model",
+   "module": "gem.model.prf_gaussian_model",
+   "file": "external/github/GEMpRF/gem/model/prf_gaussian_model.py",
+   "line": 1,
+   "doc": "Created on Tue Feb 20 11:14:51 2024",
+   "contains": [
+    "PRFGaussianModel"
+   ],
+   "imports": [
+    "numpy",
+    "cupy",
+    "typing",
+    "gem.model.prf_model",
+    "gem.model.selected_prf_model",
+    "gem.model.prf_stimulus",
+    "gem.space.PRFSpace",
+    "gem.utils.hpc_cupy_utils"
+   ]
+  },
+  {
+   "id": "github.gem.model.prf_gaussian_model::PRFGaussianModel",
+   "kind": "class",
+   "name": "PRFGaussianModel",
+   "qualname": "PRFGaussianModel",
+   "source_id": "github.gem.model.prf_gaussian_model",
+   "module": "gem.model.prf_gaussian_model",
+   "file": "external/github/GEMpRF/gem/model/prf_gaussian_model.py",
+   "line": 25,
+   "doc": "",
+   "bases": [
+    "PRFModel"
+   ],
+   "contains": [
+    "__init__",
+    "create_model",
+    "extract_text",
+    "get_validated_sampling_points_indices",
+    "model_parameters_list",
+    "num_dimensions",
+    "model_curves_kernel",
+    "derivatives_kernels_list",
+    "model_type"
+   ]
+  },
+  {
+   "id": "github.gem.model.prf_gaussian_model::PRFGaussianModel.__init__",
+   "kind": "method",
+   "name": "__init__",
+   "qualname": "PRFGaussianModel.__init__",
+   "source_id": "github.gem.model.prf_gaussian_model",
+   "module": "gem.model.prf_gaussian_model",
+   "file": "external/github/GEMpRF/gem/model/prf_gaussian_model.py",
+   "line": 26,
+   "doc": "",
+   "signature": "(self, visual_field_radius)",
+   "calls": [
+    "get_raw_module",
+    "get_function",
+    "super"
+   ]
+  },
+  {
+   "id": "github.gem.model.prf_gaussian_model::PRFGaussianModel.create_model",
+   "kind": "method",
+   "name": "create_model",
+   "qualname": "PRFGaussianModel.create_model",
+   "source_id": "github.gem.model.prf_gaussian_model",
+   "module": "gem.model.prf_gaussian_model",
+   "file": "external/github/GEMpRF/gem/model/prf_gaussian_model.py",
+   "line": 43,
+   "doc": "Overrides FormalParserInterface.load_data_source()",
+   "signature": "(self, model_name, file_name)",
+   "calls": [
+    "print"
+   ]
+  },
+  {
+   "id": "github.gem.model.prf_gaussian_model::PRFGaussianModel.extract_text",
+   "kind": "method",
+   "name": "extract_text",
+   "qualname": "PRFGaussianModel.extract_text",
+   "source_id": "github.gem.model.prf_gaussian_model",
+   "module": "gem.model.prf_gaussian_model",
+   "file": "external/github/GEMpRF/gem/model/prf_gaussian_model.py",
+   "line": 48,
+   "doc": "Overrides FormalParserInterface.extract_text()",
+   "signature": "(self, full_file_path)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_gaussian_model::PRFGaussianModel.get_validated_sampling_points_indices",
+   "kind": "method",
+   "name": "get_validated_sampling_points_indices",
+   "qualname": "PRFGaussianModel.get_validated_sampling_points_indices",
+   "source_id": "github.gem.model.prf_gaussian_model",
+   "module": "gem.model.prf_gaussian_model",
+   "file": "external/github/GEMpRF/gem/model/prf_gaussian_model.py",
+   "line": 52,
+   "doc": "Overrides FormalParserInterface.get_validated_sampling_points_indices().",
+   "signature": "(self, multidim_points)",
+   "calls": [
+    "print",
+    "where"
+   ]
+  },
+  {
+   "id": "github.gem.model.prf_gaussian_model::PRFGaussianModel.model_parameters_list",
+   "kind": "method",
+   "name": "model_parameters_list",
+   "qualname": "PRFGaussianModel.model_parameters_list",
+   "source_id": "github.gem.model.prf_gaussian_model",
+   "module": "gem.model.prf_gaussian_model",
+   "file": "external/github/GEMpRF/gem/model/prf_gaussian_model.py",
+   "line": 90,
+   "doc": "Overrides FormalParserInterface.model_parameters_list()",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_gaussian_model::PRFGaussianModel.num_dimensions",
+   "kind": "method",
+   "name": "num_dimensions",
+   "qualname": "PRFGaussianModel.num_dimensions",
+   "source_id": "github.gem.model.prf_gaussian_model",
+   "module": "gem.model.prf_gaussian_model",
+   "file": "external/github/GEMpRF/gem/model/prf_gaussian_model.py",
+   "line": 100,
+   "doc": "Overrides FormalParserInterface.num_dimensions()",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_gaussian_model::PRFGaussianModel.model_curves_kernel",
+   "kind": "method",
+   "name": "model_curves_kernel",
+   "qualname": "PRFGaussianModel.model_curves_kernel",
+   "source_id": "github.gem.model.prf_gaussian_model",
+   "module": "gem.model.prf_gaussian_model",
+   "file": "external/github/GEMpRF/gem/model/prf_gaussian_model.py",
+   "line": 105,
+   "doc": "Overrides FormalParserInterface.get_model_curves_kernel()",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_gaussian_model::PRFGaussianModel.derivatives_kernels_list",
+   "kind": "method",
+   "name": "derivatives_kernels_list",
+   "qualname": "PRFGaussianModel.derivatives_kernels_list",
+   "source_id": "github.gem.model.prf_gaussian_model",
+   "module": "gem.model.prf_gaussian_model",
+   "file": "external/github/GEMpRF/gem/model/prf_gaussian_model.py",
+   "line": 110,
+   "doc": "Overrides FormalParserInterface.get_derivatives_kernels_list()",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_gaussian_model::PRFGaussianModel.model_type",
+   "kind": "method",
+   "name": "model_type",
+   "qualname": "PRFGaussianModel.model_type",
+   "source_id": "github.gem.model.prf_gaussian_model",
+   "module": "gem.model.prf_gaussian_model",
+   "file": "external/github/GEMpRF/gem/model/prf_gaussian_model.py",
+   "line": 119,
+   "doc": "Overrides FormalParserInterface.model_type()",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_model::gem.model.prf_model",
+   "kind": "module",
+   "name": "prf_model",
+   "qualname": "gem.model.prf_model",
+   "source_id": "github.gem.model.prf_model",
+   "module": "gem.model.prf_model",
+   "file": "external/github/GEMpRF/gem/model/prf_model.py",
+   "line": 1,
+   "doc": "Created on Tue Feb 20 11:14:23 2024",
+   "contains": [
+    "GaussianModelParams",
+    "DoGModelParams",
+    "PRFModel"
+   ],
+   "imports": [
+    "abc",
+    "cupy",
+    "numpy",
+    "typing",
+    "enum",
+    "gem"
+   ]
+  },
+  {
+   "id": "github.gem.model.prf_model::GaussianModelParams",
+   "kind": "class",
+   "name": "GaussianModelParams",
+   "qualname": "GaussianModelParams",
+   "source_id": "github.gem.model.prf_model",
+   "module": "gem.model.prf_model",
+   "file": "external/github/GEMpRF/gem/model/prf_model.py",
+   "line": 23,
+   "doc": "",
+   "bases": [
+    "Enum"
+   ],
+   "contains": []
+  },
+  {
+   "id": "github.gem.model.prf_model::DoGModelParams",
+   "kind": "class",
+   "name": "DoGModelParams",
+   "qualname": "DoGModelParams",
+   "source_id": "github.gem.model.prf_model",
+   "module": "gem.model.prf_model",
+   "file": "external/github/GEMpRF/gem/model/prf_model.py",
+   "line": 29,
+   "doc": "",
+   "bases": [
+    "Enum"
+   ],
+   "contains": []
+  },
+  {
+   "id": "github.gem.model.prf_model::PRFModel",
+   "kind": "class",
+   "name": "PRFModel",
+   "qualname": "PRFModel",
+   "source_id": "github.gem.model.prf_model",
+   "module": "gem.model.prf_model",
+   "file": "external/github/GEMpRF/gem/model/prf_model.py",
+   "line": 36,
+   "doc": "A Parser metaclass that will be used for parser class creation. This interface is used for concrete classes to inherit from.",
+   "bases": [],
+   "contains": [
+    "__subclasshook__",
+    "create_model",
+    "get_validated_sampling_points_indices",
+    "extract_text",
+    "model_type",
+    "num_dimensions",
+    "model_curves_kernel",
+    "derivatives_kernels_list",
+    "model_parameters_list"
+   ]
+  },
+  {
+   "id": "github.gem.model.prf_model::PRFModel.__subclasshook__",
+   "kind": "method",
+   "name": "__subclasshook__",
+   "qualname": "PRFModel.__subclasshook__",
+   "source_id": "github.gem.model.prf_model",
+   "module": "gem.model.prf_model",
+   "file": "external/github/GEMpRF/gem/model/prf_model.py",
+   "line": 40,
+   "doc": "",
+   "signature": "(cls, subclass)",
+   "calls": [
+    "hasattr",
+    "callable"
+   ]
+  },
+  {
+   "id": "github.gem.model.prf_model::PRFModel.create_model",
+   "kind": "method",
+   "name": "create_model",
+   "qualname": "PRFModel.create_model",
+   "source_id": "github.gem.model.prf_model",
+   "module": "gem.model.prf_model",
+   "file": "external/github/GEMpRF/gem/model/prf_model.py",
+   "line": 76,
+   "doc": "Load in the data set",
+   "signature": "(self, model_name, file_name)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_model::PRFModel.get_validated_sampling_points_indices",
+   "kind": "method",
+   "name": "get_validated_sampling_points_indices",
+   "qualname": "PRFModel.get_validated_sampling_points_indices",
+   "source_id": "github.gem.model.prf_model",
+   "module": "gem.model.prf_model",
+   "file": "external/github/GEMpRF/gem/model/prf_model.py",
+   "line": 81,
+   "doc": "Get the indices of the validated sampling points (i.e. check that the pRF point fullfills the requirement of the selected model)",
+   "signature": "(self, model_name, file_name)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_model::PRFModel.extract_text",
+   "kind": "method",
+   "name": "extract_text",
+   "qualname": "PRFModel.extract_text",
+   "source_id": "github.gem.model.prf_model",
+   "module": "gem.model.prf_model",
+   "file": "external/github/GEMpRF/gem/model/prf_model.py",
+   "line": 86,
+   "doc": "Extract text from the data set",
+   "signature": "(self, full_file_path)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_model::PRFModel.model_type",
+   "kind": "method",
+   "name": "model_type",
+   "qualname": "PRFModel.model_type",
+   "source_id": "github.gem.model.prf_model",
+   "module": "gem.model.prf_model",
+   "file": "external/github/GEMpRF/gem/model/prf_model.py",
+   "line": 92,
+   "doc": "Get the model type",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_model::PRFModel.num_dimensions",
+   "kind": "method",
+   "name": "num_dimensions",
+   "qualname": "PRFModel.num_dimensions",
+   "source_id": "github.gem.model.prf_model",
+   "module": "gem.model.prf_model",
+   "file": "external/github/GEMpRF/gem/model/prf_model.py",
+   "line": 97,
+   "doc": "Get the model type",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_model::PRFModel.model_curves_kernel",
+   "kind": "method",
+   "name": "model_curves_kernel",
+   "qualname": "PRFModel.model_curves_kernel",
+   "source_id": "github.gem.model.prf_model",
+   "module": "gem.model.prf_model",
+   "file": "external/github/GEMpRF/gem/model/prf_model.py",
+   "line": 108,
+   "doc": "Get the CUDA kernel for the model curves",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_model::PRFModel.derivatives_kernels_list",
+   "kind": "method",
+   "name": "derivatives_kernels_list",
+   "qualname": "PRFModel.derivatives_kernels_list",
+   "source_id": "github.gem.model.prf_model",
+   "module": "gem.model.prf_model",
+   "file": "external/github/GEMpRF/gem/model/prf_model.py",
+   "line": 113,
+   "doc": "Get the CUDA kernels for the derivatives",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.prf_model::PRFModel.model_parameters_list",
+   "kind": "method",
+   "name": "model_parameters_list",
+   "qualname": "PRFModel.model_parameters_list",
+   "source_id": "github.gem.model.prf_model",
+   "module": "gem.model.prf_model",
+   "file": "external/github/GEMpRF/gem/model/prf_model.py",
+   "line": 123,
+   "doc": "Get the model parameters",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.model.selected_prf_model::gem.model.selected_prf_model",
+   "kind": "module",
+   "name": "selected_prf_model",
+   "qualname": "gem.model.selected_prf_model",
+   "source_id": "github.gem.model.selected_prf_model",
+   "module": "gem.model.selected_prf_model",
+   "file": "external/github/GEMpRF/gem/model/selected_prf_model.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "SelectedPRFModel"
+   ],
+   "imports": [
+    "enum"
+   ]
+  },
+  {
+   "id": "github.gem.model.selected_prf_model::SelectedPRFModel",
+   "kind": "class",
+   "name": "SelectedPRFModel",
+   "qualname": "SelectedPRFModel",
+   "source_id": "github.gem.model.selected_prf_model",
+   "module": "gem.model.selected_prf_model",
+   "file": "external/github/GEMpRF/gem/model/selected_prf_model.py",
+   "line": 13,
+   "doc": "",
+   "bases": [
+    "Enum"
+   ],
+   "contains": []
+  },
+  {
+   "id": "github.gem.run_gem::gem.run_gem",
+   "kind": "module",
+   "name": "run_gem",
+   "qualname": "gem.run_gem",
+   "source_id": "github.gem.run_gem",
+   "module": "gem.run_gem",
+   "file": "external/github/GEMpRF/gem/run_gem.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "run"
+   ],
+   "imports": [
+    "time",
+    "datetime",
+    "os",
+    "sys",
+    "argparse"
+   ]
+  },
+  {
+   "id": "github.gem.run_gem::run",
+   "kind": "function",
+   "name": "run",
+   "qualname": "run",
+   "source_id": "github.gem.run_gem",
+   "module": "gem.run_gem",
+   "file": "external/github/GEMpRF/gem/run_gem.py",
+   "line": 19,
+   "doc": "",
+   "signature": "(config_filepath=...)",
+   "calls": [
+    "init_setup",
+    "print",
+    "exit",
+    "exists"
+   ]
+  },
+  {
+   "id": "github.gem.space.PRFNeighbours::gem.space.PRFNeighbours",
+   "kind": "module",
+   "name": "PRFNeighbours",
+   "qualname": "gem.space.PRFNeighbours",
+   "source_id": "github.gem.space.PRFNeighbours",
+   "module": "gem.space.PRFNeighbours",
+   "file": "external/github/GEMpRF/gem/space/PRFNeighbours.py",
+   "line": 1,
+   "doc": "",
+   "contains": [
+    "PRFNeighbours"
+   ],
+   "imports": []
+  },
+  {
+   "id": "github.gem.space.PRFNeighbours::PRFNeighbours",
+   "kind": "class",
+   "name": "PRFNeighbours",
+   "qualname": "PRFNeighbours",
+   "source_id": "github.gem.space.PRFNeighbours",
+   "module": "gem.space.PRFNeighbours",
+   "file": "external/github/GEMpRF/gem/space/PRFNeighbours.py",
+   "line": 1,
+   "doc": "description of class",
+   "bases": [
+    "object"
+   ],
+   "contains": []
+  },
+  {
+   "id": "github.gem.space.PRFSpace::gem.space.PRFSpace",
+   "kind": "module",
+   "name": "PRFSpace",
+   "qualname": "gem.space.PRFSpace",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 1,
+   "doc": "Created on Mon Feb 19 16:08:11 2024",
+   "contains": [
+    "PRFSpace",
+    "combination_generator_jit",
+    "multidim2flatIdx",
+    "compute_multidim_points_neighbours_multithreaded",
+    "get_single_point_neighbours_Numba"
+   ],
+   "imports": [
+    "itertools",
+    "numpy",
+    "cupy",
+    "numba_kdtree",
+    "numba",
+    "typing",
+    "joblib",
+    "gem.utils.gem_gpu_manager"
+   ]
+  },
+  {
+   "id": "github.gem.space.PRFSpace::PRFSpace",
+   "kind": "class",
+   "name": "PRFSpace",
+   "qualname": "PRFSpace",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 223,
+   "doc": "Represents a class for handling PRF (Population Receptive Field) points.",
+   "bases": [],
+   "contains": [
+    "__init__",
+    "points_xy",
+    "multi_dim_points_cpu",
+    "multi_dim_points_gpu",
+    "multi_dim_points_vf_neighbours",
+    "multi_dim_points_neighbours_flat_indices",
+    "make_extra_dimensions",
+    "convert_spatial_to_multidim",
+    "combination_generator",
+    "compute_multidim_points_neighbours",
+    "keep_validated_sampling_points",
+    "get_full_2_validated_indices",
+    "_3d_model_test_visualization"
+   ]
+  },
+  {
+   "id": "github.gem.space.PRFSpace::PRFSpace.__init__",
+   "kind": "method",
+   "name": "__init__",
+   "qualname": "PRFSpace.__init__",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 252,
+   "doc": "",
+   "signature": "(self, points_xy, additional_dimensions)",
+   "calls": [
+    "KDTree"
+   ]
+  },
+  {
+   "id": "github.gem.space.PRFSpace::PRFSpace.points_xy",
+   "kind": "method",
+   "name": "points_xy",
+   "qualname": "PRFSpace.points_xy",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 274,
+   "doc": "Array of XY points.",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.space.PRFSpace::PRFSpace.multi_dim_points_cpu",
+   "kind": "method",
+   "name": "multi_dim_points_cpu",
+   "qualname": "PRFSpace.multi_dim_points_cpu",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 284,
+   "doc": "Get the multi-dimensional points array allocated on CPU.",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.space.PRFSpace::PRFSpace.multi_dim_points_gpu",
+   "kind": "method",
+   "name": "multi_dim_points_gpu",
+   "qualname": "PRFSpace.multi_dim_points_gpu",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 297,
+   "doc": "Get the multi-dimensional points array allocated on GPU.",
+   "signature": "(self)",
+   "calls": [
+    "execute_cupy_func_on_default",
+    "get_instance"
+   ]
+  },
+  {
+   "id": "github.gem.space.PRFSpace::PRFSpace.multi_dim_points_vf_neighbours",
+   "kind": "method",
+   "name": "multi_dim_points_vf_neighbours",
+   "qualname": "PRFSpace.multi_dim_points_vf_neighbours",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 313,
+   "doc": "Returns the multi-dimensional points neighbours in Visual Field values.",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.space.PRFSpace::PRFSpace.multi_dim_points_neighbours_flat_indices",
+   "kind": "method",
+   "name": "multi_dim_points_neighbours_flat_indices",
+   "qualname": "PRFSpace.multi_dim_points_neighbours_flat_indices",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 323,
+   "doc": "Returns the multi-dimensional points neighbours indices.",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.space.PRFSpace::PRFSpace.make_extra_dimensions",
+   "kind": "method",
+   "name": "make_extra_dimensions",
+   "qualname": "PRFSpace.make_extra_dimensions",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 334,
+   "doc": "Create extra dimensions based on the given arguments.",
+   "signature": "(*args)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.space.PRFSpace::PRFSpace.convert_spatial_to_multidim",
+   "kind": "method",
+   "name": "convert_spatial_to_multidim",
+   "qualname": "PRFSpace.convert_spatial_to_multidim",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 347,
+   "doc": "Converts spatial points to multidimensional points.",
+   "signature": "(self)",
+   "calls": [
+    "array",
+    "prod",
+    "zeros",
+    "range"
+   ]
+  },
+  {
+   "id": "github.gem.space.PRFSpace::PRFSpace.combination_generator",
+   "kind": "method",
+   "name": "combination_generator",
+   "qualname": "PRFSpace.combination_generator",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 379,
+   "doc": "",
+   "signature": "(cls, arrays)",
+   "calls": [
+    "combination_generator_jit"
+   ]
+  },
+  {
+   "id": "github.gem.space.PRFSpace::PRFSpace.compute_multidim_points_neighbours",
+   "kind": "method",
+   "name": "compute_multidim_points_neighbours",
+   "qualname": "PRFSpace.compute_multidim_points_neighbours",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 384,
+   "doc": "Computes the multidimensional points neighbours (in terms of indices and Visual Field values)",
+   "signature": "(self)",
+   "calls": [
+    "compute_multidim_points_neighbours_multithreaded",
+    "arange",
+    "list"
+   ]
+  },
+  {
+   "id": "github.gem.space.PRFSpace::PRFSpace.keep_validated_sampling_points",
+   "kind": "method",
+   "name": "keep_validated_sampling_points",
+   "qualname": "PRFSpace.keep_validated_sampling_points",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 413,
+   "doc": "Extracts validated sampling points and updates the original multi-dimensional points array to keep ONLY the validated points",
+   "signature": "(self, validation_function)",
+   "calls": [
+    "validation_function"
+   ]
+  },
+  {
+   "id": "github.gem.space.PRFSpace::PRFSpace.get_full_2_validated_indices",
+   "kind": "method",
+   "name": "get_full_2_validated_indices",
+   "qualname": "PRFSpace.get_full_2_validated_indices",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 429,
+   "doc": "",
+   "signature": "(self, *indices, invalid_key_value=...)",
+   "calls": [
+    "tolist",
+    "reshape",
+    "ravel",
+    "array",
+    "enumerate"
+   ]
+  },
+  {
+   "id": "github.gem.space.PRFSpace::PRFSpace._3d_model_test_visualization",
+   "kind": "method",
+   "name": "_3d_model_test_visualization",
+   "qualname": "PRFSpace._3d_model_test_visualization",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 439,
+   "doc": "Visualizes the 3D model test by plotting the query point, all points, and nearest points in a 3D scatter plot.",
+   "signature": "(self, multi_dim_query_point, nearest_points)",
+   "calls": [
+    "figure",
+    "add_subplot",
+    "scatter",
+    "range",
+    "set_xlabel",
+    "set_ylabel",
+    "set_zlabel",
+    "title",
+    "legend",
+    "show",
+    "plot"
+   ]
+  },
+  {
+   "id": "github.gem.space.PRFSpace::combination_generator_jit",
+   "kind": "function",
+   "name": "combination_generator_jit",
+   "qualname": "combination_generator_jit",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 26,
+   "doc": "NOTE: This function is used instead of itertools.product to generate a cartesian product of input arrays.",
+   "signature": "(arrays)",
+   "calls": [
+    "njit",
+    "zeros",
+    "range",
+    "repeat"
+   ]
+  },
+  {
+   "id": "github.gem.space.PRFSpace::multidim2flatIdx",
+   "kind": "function",
+   "name": "multidim2flatIdx",
+   "qualname": "multidim2flatIdx",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 83,
+   "doc": "Compute the flat index for a multi-dimensional point.",
+   "signature": "(point, shape)",
+   "calls": [
+    "njit"
+   ]
+  },
+  {
+   "id": "github.gem.space.PRFSpace::compute_multidim_points_neighbours_multithreaded",
+   "kind": "function",
+   "name": "compute_multidim_points_neighbours_multithreaded",
+   "qualname": "compute_multidim_points_neighbours_multithreaded",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 107,
+   "doc": "Computes the multidimensional points neighbours (in terms of indices and Visual Field values) using multiprocessing.",
+   "signature": "(all_multi_dim_points_arr_cpu, num_spatial_dimensions, kdtree, points_xy, num_total_dimensions, num_extra_dimensions, extra_dimensions, num_neighbors=..., validated_multidim_indices=..., n_jobs=...)",
+   "calls": [
+    "get_single_point_neighbours_Numba",
+    "parallel_backend",
+    "list",
+    "Parallel",
+    "delayed"
+   ]
+  },
+  {
+   "id": "github.gem.space.PRFSpace::get_single_point_neighbours_Numba",
+   "kind": "function",
+   "name": "get_single_point_neighbours_Numba",
+   "qualname": "get_single_point_neighbours_Numba",
+   "source_id": "github.gem.space.PRFSpace",
+   "module": "gem.space.PRFSpace",
+   "file": "external/github/GEMpRF/gem/space/PRFSpace.py",
+   "line": 134,
+   "doc": "Get neighbors of a single multi-dimensional point.",
+   "signature": "(multi_dim_point, num_spatial_dimensions, kdtree, points_xy, num_total_dimensions, num_extra_dimensions, extra_dimensions, num_neighbors, validated_multidim_indices)",
+   "calls": [
+    "njit",
+    "query",
+    "range",
+    "zeros",
+    "argmin",
+    "arange",
+    "append",
+    "combination_generator_jit",
+    "multidim2flatIdx",
+    "list"
+   ]
+  },
+  {
+   "id": "github.gem.space.coefficient_matrix::gem.space.coefficient_matrix",
+   "kind": "module",
+   "name": "coefficient_matrix",
+   "qualname": "gem.space.coefficient_matrix",
+   "source_id": "github.gem.space.coefficient_matrix",
+   "module": "gem.space.coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/space/coefficient_matrix.py",
+   "line": 1,
+   "doc": "",
+   "contains": [
+    "CoefficientMatix",
+    "GEM_Grids2MpInv_numba"
+   ],
+   "imports": [
+    "numpy",
+    "numba"
+   ]
+  },
+  {
+   "id": "github.gem.space.coefficient_matrix::CoefficientMatix",
+   "kind": "class",
+   "name": "CoefficientMatix",
+   "qualname": "CoefficientMatix",
+   "source_id": "github.gem.space.coefficient_matrix",
+   "module": "gem.space.coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/space/coefficient_matrix.py",
+   "line": 36,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "Wrapper_Grids2MpInv_numba"
+   ]
+  },
+  {
+   "id": "github.gem.space.coefficient_matrix::CoefficientMatix.Wrapper_Grids2MpInv_numba",
+   "kind": "method",
+   "name": "Wrapper_Grids2MpInv_numba",
+   "qualname": "CoefficientMatix.Wrapper_Grids2MpInv_numba",
+   "source_id": "github.gem.space.coefficient_matrix",
+   "module": "gem.space.coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/space/coefficient_matrix.py",
+   "line": 38,
+   "doc": "",
+   "signature": "(cls, multi_dim_points, multi_dim_points_neighbours)",
+   "calls": [
+    "GEM_Grids2MpInv_numba"
+   ]
+  },
+  {
+   "id": "github.gem.space.coefficient_matrix::GEM_Grids2MpInv_numba",
+   "kind": "function",
+   "name": "GEM_Grids2MpInv_numba",
+   "qualname": "GEM_Grids2MpInv_numba",
+   "source_id": "github.gem.space.coefficient_matrix",
+   "module": "gem.space.coefficient_matrix",
+   "file": "external/github/GEMpRF/gem/space/coefficient_matrix.py",
+   "line": 6,
+   "doc": "",
+   "signature": "(multi_dim_points, multi_dim_points_neighbours)",
+   "calls": [
+    "njit",
+    "range",
+    "zeros",
+    "pinv",
+    "append",
+    "array"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_dummy::gem.tests.test_dummy",
+   "kind": "module",
+   "name": "test_dummy",
+   "qualname": "gem.tests.test_dummy",
+   "source_id": "github.gem.tests.test_dummy",
+   "module": "gem.tests.test_dummy",
+   "file": "external/github/GEMpRF/gem/tests/test_dummy.py",
+   "line": 1,
+   "doc": "",
+   "contains": [
+    "DummyTests"
+   ],
+   "imports": [
+    "unittest"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_dummy::DummyTests",
+   "kind": "class",
+   "name": "DummyTests",
+   "qualname": "DummyTests",
+   "source_id": "github.gem.tests.test_dummy",
+   "module": "gem.tests.test_dummy",
+   "file": "external/github/GEMpRF/gem/tests/test_dummy.py",
+   "line": 3,
+   "doc": "",
+   "bases": [
+    "TestCase"
+   ],
+   "contains": [
+    "test_two_plus_one_is_three"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_dummy::DummyTests.test_two_plus_one_is_three",
+   "kind": "method",
+   "name": "test_two_plus_one_is_three",
+   "qualname": "DummyTests.test_two_plus_one_is_three",
+   "source_id": "github.gem.tests.test_dummy",
+   "module": "gem.tests.test_dummy",
+   "file": "external/github/GEMpRF/gem/tests/test_dummy.py",
+   "line": 4,
+   "doc": "",
+   "signature": "(self)",
+   "calls": [
+    "assertEqual"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_gem_2d_gaussian_results::gem.tests.test_gem_2d_gaussian_results",
+   "kind": "module",
+   "name": "test_gem_2d_gaussian_results",
+   "qualname": "gem.tests.test_gem_2d_gaussian_results",
+   "source_id": "github.gem.tests.test_gem_2d_gaussian_results",
+   "module": "gem.tests.test_gem_2d_gaussian_results",
+   "file": "external/github/GEMpRF/gem/tests/test_gem_2d_gaussian_results.py",
+   "line": 1,
+   "doc": "",
+   "contains": [
+    "GemAnalysisTests"
+   ],
+   "imports": [
+    "unittest",
+    "os",
+    "xml",
+    "shutil"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_gem_2d_gaussian_results::GemAnalysisTests",
+   "kind": "class",
+   "name": "GemAnalysisTests",
+   "qualname": "GemAnalysisTests",
+   "source_id": "github.gem.tests.test_gem_2d_gaussian_results",
+   "module": "gem.tests.test_gem_2d_gaussian_results",
+   "file": "external/github/GEMpRF/gem/tests/test_gem_2d_gaussian_results.py",
+   "line": 6,
+   "doc": "",
+   "bases": [
+    "TestCase"
+   ],
+   "contains": [
+    "get_cofig_dict",
+    "set_test_config_data",
+    "setUp",
+    "test_gem_current_results_are_same_as_before_on_simulated_data_location_3n2",
+    "test_gem_predicts_average_3n2_for_simulated_location_3n2"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_gem_2d_gaussian_results::GemAnalysisTests.get_cofig_dict",
+   "kind": "method",
+   "name": "get_cofig_dict",
+   "qualname": "GemAnalysisTests.get_cofig_dict",
+   "source_id": "github.gem.tests.test_gem_2d_gaussian_results",
+   "module": "gem.tests.test_gem_2d_gaussian_results",
+   "file": "external/github/GEMpRF/gem/tests/test_gem_2d_gaussian_results.py",
+   "line": 7,
+   "doc": "",
+   "signature": "(self)",
+   "calls": [
+    "join"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_gem_2d_gaussian_results::GemAnalysisTests.set_test_config_data",
+   "kind": "method",
+   "name": "set_test_config_data",
+   "qualname": "GemAnalysisTests.set_test_config_data",
+   "source_id": "github.gem.tests.test_gem_2d_gaussian_results",
+   "module": "gem.tests.test_gem_2d_gaussian_results",
+   "file": "external/github/GEMpRF/gem/tests/test_gem_2d_gaussian_results.py",
+   "line": 41,
+   "doc": "",
+   "signature": "(self, test_config_dict)",
+   "calls": [
+    "update_xml_node_attribute",
+    "items",
+    "update_xml_node_value"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_gem_2d_gaussian_results::GemAnalysisTests.setUp",
+   "kind": "method",
+   "name": "setUp",
+   "qualname": "GemAnalysisTests.setUp",
+   "source_id": "github.gem.tests.test_gem_2d_gaussian_results",
+   "module": "gem.tests.test_gem_2d_gaussian_results",
+   "file": "external/github/GEMpRF/gem/tests/test_gem_2d_gaussian_results.py",
+   "line": 61,
+   "doc": "",
+   "signature": "(self)",
+   "calls": [
+    "dirname",
+    "append",
+    "join",
+    "copyfile",
+    "abspath",
+    "exists",
+    "makedirs"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_gem_2d_gaussian_results::GemAnalysisTests.test_gem_current_results_are_same_as_before_on_simulated_data_location_3n2",
+   "kind": "method",
+   "name": "test_gem_current_results_are_same_as_before_on_simulated_data_location_3n2",
+   "qualname": "GemAnalysisTests.test_gem_current_results_are_same_as_before_on_simulated_data_location_3n2",
+   "source_id": "github.gem.tests.test_gem_2d_gaussian_results",
+   "module": "gem.tests.test_gem_2d_gaussian_results",
+   "file": "external/github/GEMpRF/gem/tests/test_gem_2d_gaussian_results.py",
+   "line": 79,
+   "doc": "Test case to verify if the GEM estimation produces correct values.",
+   "signature": "(self)",
+   "calls": [
+    "get_cofig_dict",
+    "set_test_config_data",
+    "get_estimation_data",
+    "compare_estimation_results",
+    "assertLessEqual",
+    "join"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_gem_2d_gaussian_results::GemAnalysisTests.test_gem_predicts_average_3n2_for_simulated_location_3n2",
+   "kind": "method",
+   "name": "test_gem_predicts_average_3n2_for_simulated_location_3n2",
+   "qualname": "GemAnalysisTests.test_gem_predicts_average_3n2_for_simulated_location_3n2",
+   "source_id": "github.gem.tests.test_gem_2d_gaussian_results",
+   "module": "gem.tests.test_gem_2d_gaussian_results",
+   "file": "external/github/GEMpRF/gem/tests/test_gem_2d_gaussian_results.py",
+   "line": 110,
+   "doc": "Test case to verify if GEM predicts the correct values for a simulated pRF (x=3, y=2, sigma=1)",
+   "signature": "(self)",
+   "calls": [
+    "get_cofig_dict",
+    "set_test_config_data",
+    "get_estimation_data",
+    "get_avg_2d_gaussian_estimated_values",
+    "join"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_gem_individiual_run_bids_handler::gem.tests.test_gem_individiual_run_bids_handler",
+   "kind": "module",
+   "name": "test_gem_individiual_run_bids_handler",
+   "qualname": "gem.tests.test_gem_individiual_run_bids_handler",
+   "source_id": "github.gem.tests.test_gem_individiual_run_bids_handler",
+   "module": "gem.tests.test_gem_individiual_run_bids_handler",
+   "file": "external/github/GEMpRF/gem/tests/test_gem_individiual_run_bids_handler.py",
+   "line": 1,
+   "doc": "",
+   "contains": [
+    "GemIndividualRunBidsHandling"
+   ],
+   "imports": [
+    "unittest",
+    "os",
+    "xml",
+    "shutil"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_gem_individiual_run_bids_handler::GemIndividualRunBidsHandling",
+   "kind": "class",
+   "name": "GemIndividualRunBidsHandling",
+   "qualname": "GemIndividualRunBidsHandling",
+   "source_id": "github.gem.tests.test_gem_individiual_run_bids_handler",
+   "module": "gem.tests.test_gem_individiual_run_bids_handler",
+   "file": "external/github/GEMpRF/gem/tests/test_gem_individiual_run_bids_handler.py",
+   "line": 6,
+   "doc": "",
+   "bases": [
+    "TestCase"
+   ],
+   "contains": [
+    "get_cofig_dict",
+    "set_test_config_data",
+    "setUp",
+    "test_gem_bids_handler_finds_correct_input_data_files"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_gem_individiual_run_bids_handler::GemIndividualRunBidsHandling.get_cofig_dict",
+   "kind": "method",
+   "name": "get_cofig_dict",
+   "qualname": "GemIndividualRunBidsHandling.get_cofig_dict",
+   "source_id": "github.gem.tests.test_gem_individiual_run_bids_handler",
+   "module": "gem.tests.test_gem_individiual_run_bids_handler",
+   "file": "external/github/GEMpRF/gem/tests/test_gem_individiual_run_bids_handler.py",
+   "line": 7,
+   "doc": "",
+   "signature": "(self)",
+   "calls": [
+    "join"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_gem_individiual_run_bids_handler::GemIndividualRunBidsHandling.set_test_config_data",
+   "kind": "method",
+   "name": "set_test_config_data",
+   "qualname": "GemIndividualRunBidsHandling.set_test_config_data",
+   "source_id": "github.gem.tests.test_gem_individiual_run_bids_handler",
+   "module": "gem.tests.test_gem_individiual_run_bids_handler",
+   "file": "external/github/GEMpRF/gem/tests/test_gem_individiual_run_bids_handler.py",
+   "line": 50,
+   "doc": "",
+   "signature": "(self, test_config_dict)",
+   "calls": [
+    "update_xml_node_attribute",
+    "items",
+    "update_xml_node_value"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_gem_individiual_run_bids_handler::GemIndividualRunBidsHandling.setUp",
+   "kind": "method",
+   "name": "setUp",
+   "qualname": "GemIndividualRunBidsHandling.setUp",
+   "source_id": "github.gem.tests.test_gem_individiual_run_bids_handler",
+   "module": "gem.tests.test_gem_individiual_run_bids_handler",
+   "file": "external/github/GEMpRF/gem/tests/test_gem_individiual_run_bids_handler.py",
+   "line": 70,
+   "doc": "",
+   "signature": "(self)",
+   "calls": [
+    "dirname",
+    "append",
+    "join",
+    "copyfile",
+    "abspath",
+    "exists",
+    "makedirs"
+   ]
+  },
+  {
+   "id": "github.gem.tests.test_gem_individiual_run_bids_handler::GemIndividualRunBidsHandling.test_gem_bids_handler_finds_correct_input_data_files",
+   "kind": "method",
+   "name": "test_gem_bids_handler_finds_correct_input_data_files",
+   "qualname": "GemIndividualRunBidsHandling.test_gem_bids_handler_finds_correct_input_data_files",
+   "source_id": "github.gem.tests.test_gem_individiual_run_bids_handler",
+   "module": "gem.tests.test_gem_individiual_run_bids_handler",
+   "file": "external/github/GEMpRF/gem/tests/test_gem_individiual_run_bids_handler.py",
+   "line": 88,
+   "doc": "Test case to verify if the GEM's BIDS handler can retreive the correct files.",
+   "signature": "(self)",
+   "calls": [
+    "get_cofig_dict",
+    "set_test_config_data",
+    "load_config",
+    "get_input_filepaths",
+    "join"
+   ]
+  },
+  {
+   "id": "github.gem.tools.json_file_operations::gem.tools.json_file_operations",
+   "kind": "module",
+   "name": "json_file_operations",
+   "qualname": "gem.tools.json_file_operations",
+   "source_id": "github.gem.tools.json_file_operations",
+   "module": "gem.tools.json_file_operations",
+   "file": "external/github/GEMpRF/gem/tools/json_file_operations.py",
+   "line": 1,
+   "doc": "",
+   "contains": [
+    "JsonMgr"
+   ],
+   "imports": [
+    "json",
+    "os",
+    "datetime"
+   ]
+  },
+  {
+   "id": "github.gem.tools.json_file_operations::JsonMgr",
+   "kind": "class",
+   "name": "JsonMgr",
+   "qualname": "JsonMgr",
+   "source_id": "github.gem.tools.json_file_operations",
+   "module": "gem.tools.json_file_operations",
+   "file": "external/github/GEMpRF/gem/tools/json_file_operations.py",
+   "line": 5,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "write_to_file",
+    "args2jsonEntry",
+    "log_string"
+   ]
+  },
+  {
+   "id": "github.gem.tools.json_file_operations::JsonMgr.write_to_file",
+   "kind": "method",
+   "name": "write_to_file",
+   "qualname": "JsonMgr.write_to_file",
+   "source_id": "github.gem.tools.json_file_operations",
+   "module": "gem.tools.json_file_operations",
+   "file": "external/github/GEMpRF/gem/tools/json_file_operations.py",
+   "line": 7,
+   "doc": "",
+   "signature": "(cls, filepath, data)",
+   "calls": [
+    "dirname",
+    "makedirs",
+    "dumps",
+    "open",
+    "write"
+   ]
+  },
+  {
+   "id": "github.gem.tools.json_file_operations::JsonMgr.args2jsonEntry",
+   "kind": "method",
+   "name": "args2jsonEntry",
+   "qualname": "JsonMgr.args2jsonEntry",
+   "source_id": "github.gem.tools.json_file_operations",
+   "module": "gem.tools.json_file_operations",
+   "file": "external/github/GEMpRF/gem/tools/json_file_operations.py",
+   "line": 25,
+   "doc": "",
+   "signature": "(cls, muX, muY, sigma, r2, signal)",
+   "calls": [
+    "round",
+    "tolist",
+    "float"
+   ]
+  },
+  {
+   "id": "github.gem.tools.json_file_operations::JsonMgr.log_string",
+   "kind": "method",
+   "name": "log_string",
+   "qualname": "JsonMgr.log_string",
+   "source_id": "github.gem.tools.json_file_operations",
+   "module": "gem.tools.json_file_operations",
+   "file": "external/github/GEMpRF/gem/tools/json_file_operations.py",
+   "line": 38,
+   "doc": "",
+   "signature": "(cls, message, filepath)",
+   "calls": [
+    "strftime",
+    "open",
+    "write",
+    "format"
+   ]
+  },
+  {
+   "id": "github.gem.utils.assert_no_gemprf::gem.utils.assert_no_gemprf",
+   "kind": "module",
+   "name": "assert_no_gemprf",
+   "qualname": "gem.utils.assert_no_gemprf",
+   "source_id": "github.gem.utils.assert_no_gemprf",
+   "module": "gem.utils.assert_no_gemprf",
+   "file": "external/github/GEMpRF/gem/utils/assert_no_gemprf.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "check_gemprf_not_installed"
+   ],
+   "imports": [
+    "subprocess",
+    "sys"
+   ]
+  },
+  {
+   "id": "github.gem.utils.assert_no_gemprf::check_gemprf_not_installed",
+   "kind": "function",
+   "name": "check_gemprf_not_installed",
+   "qualname": "check_gemprf_not_installed",
+   "source_id": "github.gem.utils.assert_no_gemprf",
+   "module": "gem.utils.assert_no_gemprf",
+   "file": "external/github/GEMpRF/gem/utils/assert_no_gemprf.py",
+   "line": 14,
+   "doc": "",
+   "signature": "()",
+   "calls": [
+    "lower",
+    "print",
+    "exit",
+    "RuntimeError"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_gpu_manager::gem.utils.gem_gpu_manager",
+   "kind": "module",
+   "name": "gem_gpu_manager",
+   "qualname": "gem.utils.gem_gpu_manager",
+   "source_id": "github.gem.utils.gem_gpu_manager",
+   "module": "gem.utils.gem_gpu_manager",
+   "file": "external/github/GEMpRF/gem/utils/gem_gpu_manager.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "GemGpuManager"
+   ],
+   "imports": [
+    "cupy"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_gpu_manager::GemGpuManager",
+   "kind": "class",
+   "name": "GemGpuManager",
+   "qualname": "GemGpuManager",
+   "source_id": "github.gem.utils.gem_gpu_manager",
+   "module": "gem.utils.gem_gpu_manager",
+   "file": "external/github/GEMpRF/gem/utils/gem_gpu_manager.py",
+   "line": 12,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "__new__",
+    "__initialize",
+    "get_instance",
+    "default_gpu_id",
+    "execute_cupy_func",
+    "execute_cupy_func_on_default"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_gpu_manager::GemGpuManager.__new__",
+   "kind": "method",
+   "name": "__new__",
+   "qualname": "GemGpuManager.__new__",
+   "source_id": "github.gem.utils.gem_gpu_manager",
+   "module": "gem.utils.gem_gpu_manager",
+   "file": "external/github/GEMpRF/gem/utils/gem_gpu_manager.py",
+   "line": 15,
+   "doc": "",
+   "signature": "(cls, default_gpu_id)",
+   "calls": [
+    "super"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_gpu_manager::GemGpuManager.__initialize",
+   "kind": "method",
+   "name": "__initialize",
+   "qualname": "GemGpuManager.__initialize",
+   "source_id": "github.gem.utils.gem_gpu_manager",
+   "module": "gem.utils.gem_gpu_manager",
+   "file": "external/github/GEMpRF/gem/utils/gem_gpu_manager.py",
+   "line": 21,
+   "doc": "Initialize method to set the default GPU ID.",
+   "signature": "(self, default_gpu_id)",
+   "calls": [
+    "Device"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_gpu_manager::GemGpuManager.get_instance",
+   "kind": "method",
+   "name": "get_instance",
+   "qualname": "GemGpuManager.get_instance",
+   "source_id": "github.gem.utils.gem_gpu_manager",
+   "module": "gem.utils.gem_gpu_manager",
+   "file": "external/github/GEMpRF/gem/utils/gem_gpu_manager.py",
+   "line": 27,
+   "doc": "Class method to get the singleton instance.",
+   "signature": "(cls)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.utils.gem_gpu_manager::GemGpuManager.default_gpu_id",
+   "kind": "method",
+   "name": "default_gpu_id",
+   "qualname": "GemGpuManager.default_gpu_id",
+   "source_id": "github.gem.utils.gem_gpu_manager",
+   "module": "gem.utils.gem_gpu_manager",
+   "file": "external/github/GEMpRF/gem/utils/gem_gpu_manager.py",
+   "line": 32,
+   "doc": "Returns the default GPU ID.",
+   "signature": "(self)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.utils.gem_gpu_manager::GemGpuManager.execute_cupy_func",
+   "kind": "method",
+   "name": "execute_cupy_func",
+   "qualname": "GemGpuManager.execute_cupy_func",
+   "source_id": "github.gem.utils.gem_gpu_manager",
+   "module": "gem.utils.gem_gpu_manager",
+   "file": "external/github/GEMpRF/gem/utils/gem_gpu_manager.py",
+   "line": 41,
+   "doc": "Executes a CuPy function with the provided arguments and keyword arguments.",
+   "signature": "(self, cupy_func, execute_on_custom_default_gpu=..., cupy_func_args=..., cupy_func_kwargs=...)",
+   "calls": [
+    "isinstance",
+    "TypeError",
+    "cupy_func",
+    "Device"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_gpu_manager::GemGpuManager.execute_cupy_func_on_default",
+   "kind": "method",
+   "name": "execute_cupy_func_on_default",
+   "qualname": "GemGpuManager.execute_cupy_func_on_default",
+   "source_id": "github.gem.utils.gem_gpu_manager",
+   "module": "gem.utils.gem_gpu_manager",
+   "file": "external/github/GEMpRF/gem/utils/gem_gpu_manager.py",
+   "line": 76,
+   "doc": "",
+   "signature": "(self, cupy_func, cupy_func_args=..., cupy_func_kwargs=...)",
+   "calls": [
+    "execute_cupy_func"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_h5_file_handler::gem.utils.gem_h5_file_handler",
+   "kind": "module",
+   "name": "gem_h5_file_handler",
+   "qualname": "gem.utils.gem_h5_file_handler",
+   "source_id": "github.gem.utils.gem_h5_file_handler",
+   "module": "gem.utils.gem_h5_file_handler",
+   "file": "external/github/GEMpRF/gem/utils/gem_h5_file_handler.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "H5FileManager"
+   ],
+   "imports": [
+    "h5py"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_h5_file_handler::H5FileManager",
+   "kind": "class",
+   "name": "H5FileManager",
+   "qualname": "H5FileManager",
+   "source_id": "github.gem.utils.gem_h5_file_handler",
+   "module": "gem.utils.gem_h5_file_handler",
+   "file": "external/github/GEMpRF/gem/utils/gem_h5_file_handler.py",
+   "line": 15,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "get_key_value"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_h5_file_handler::H5FileManager.get_key_value",
+   "kind": "method",
+   "name": "get_key_value",
+   "qualname": "H5FileManager.get_key_value",
+   "source_id": "github.gem.utils.gem_h5_file_handler",
+   "module": "gem.utils.gem_h5_file_handler",
+   "file": "external/github/GEMpRF/gem/utils/gem_h5_file_handler.py",
+   "line": 18,
+   "doc": "",
+   "signature": "(cls, filepath, key=..., type=...)",
+   "calls": [
+    "File",
+    "astype"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_load_estimations::gem.utils.gem_load_estimations",
+   "kind": "module",
+   "name": "gem_load_estimations",
+   "qualname": "gem.utils.gem_load_estimations",
+   "source_id": "github.gem.utils.gem_load_estimations",
+   "module": "gem.utils.gem_load_estimations",
+   "file": "external/github/GEMpRF/gem/utils/gem_load_estimations.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "EstimationsUtils"
+   ],
+   "imports": [
+    "os",
+    "json",
+    "numpy",
+    "matplotlib",
+    "random",
+    "math",
+    "sys"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_load_estimations::EstimationsUtils",
+   "kind": "class",
+   "name": "EstimationsUtils",
+   "qualname": "EstimationsUtils",
+   "source_id": "github.gem.utils.gem_load_estimations",
+   "module": "gem.utils.gem_load_estimations",
+   "file": "external/github/GEMpRF/gem/utils/gem_load_estimations.py",
+   "line": 19,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "get_estimation_data",
+    "compare_estimation_results",
+    "get_avg_2d_gaussian_estimated_values"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_load_estimations::EstimationsUtils.get_estimation_data",
+   "kind": "method",
+   "name": "get_estimation_data",
+   "qualname": "EstimationsUtils.get_estimation_data",
+   "source_id": "github.gem.utils.gem_load_estimations",
+   "module": "gem.utils.gem_load_estimations",
+   "file": "external/github/GEMpRF/gem/utils/gem_load_estimations.py",
+   "line": 23,
+   "doc": "",
+   "signature": "(cls, filepath)",
+   "calls": [
+    "open",
+    "load"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_load_estimations::EstimationsUtils.compare_estimation_results",
+   "kind": "method",
+   "name": "compare_estimation_results",
+   "qualname": "EstimationsUtils.compare_estimation_results",
+   "source_id": "github.gem.utils.gem_load_estimations",
+   "module": "gem.utils.gem_load_estimations",
+   "file": "external/github/GEMpRF/gem/utils/gem_load_estimations.py",
+   "line": 29,
+   "doc": "",
+   "signature": "(cls, new_results, benchmark_results, tolerance=...)",
+   "calls": [
+    "isnan",
+    "is_nan",
+    "print",
+    "isinstance",
+    "enumerate"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_load_estimations::EstimationsUtils.get_avg_2d_gaussian_estimated_values",
+   "kind": "method",
+   "name": "get_avg_2d_gaussian_estimated_values",
+   "qualname": "EstimationsUtils.get_avg_2d_gaussian_estimated_values",
+   "source_id": "github.gem.utils.gem_load_estimations",
+   "module": "gem.utils.gem_load_estimations",
+   "file": "external/github/GEMpRF/gem/utils/gem_load_estimations.py",
+   "line": 76,
+   "doc": "",
+   "signature": "(cls, json_data)",
+   "calls": [
+    "mean",
+    "isnan"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_write_to_file::gem.utils.gem_write_to_file",
+   "kind": "module",
+   "name": "gem_write_to_file",
+   "qualname": "gem.utils.gem_write_to_file",
+   "source_id": "github.gem.utils.gem_write_to_file",
+   "module": "gem.utils.gem_write_to_file",
+   "file": "external/github/GEMpRF/gem/utils/gem_write_to_file.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "GemWriteToFile"
+   ],
+   "imports": [
+    "os",
+    "h5py",
+    "numpy",
+    "cupy"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_write_to_file::GemWriteToFile",
+   "kind": "class",
+   "name": "GemWriteToFile",
+   "qualname": "GemWriteToFile",
+   "source_id": "github.gem.utils.gem_write_to_file",
+   "module": "gem.utils.gem_write_to_file",
+   "file": "external/github/GEMpRF/gem/utils/gem_write_to_file.py",
+   "line": 17,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "__new__",
+    "__initialize",
+    "get_instance",
+    "write_array_to_h5"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_write_to_file::GemWriteToFile.__new__",
+   "kind": "method",
+   "name": "__new__",
+   "qualname": "GemWriteToFile.__new__",
+   "source_id": "github.gem.utils.gem_write_to_file",
+   "module": "gem.utils.gem_write_to_file",
+   "file": "external/github/GEMpRF/gem/utils/gem_write_to_file.py",
+   "line": 20,
+   "doc": "",
+   "signature": "(cls, result_dir, debugging_enabled=...)",
+   "calls": [
+    "super"
+   ]
+  },
+  {
+   "id": "github.gem.utils.gem_write_to_file::GemWriteToFile.__initialize",
+   "kind": "method",
+   "name": "__initialize",
+   "qualname": "GemWriteToFile.__initialize",
+   "source_id": "github.gem.utils.gem_write_to_file",
+   "module": "gem.utils.gem_write_to_file",
+   "file": "external/github/GEMpRF/gem/utils/gem_write_to_file.py",
+   "line": 26,
+   "doc": "",
+   "signature": "(self, result_dir, debugging_enabled)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.utils.gem_write_to_file::GemWriteToFile.get_instance",
+   "kind": "method",
+   "name": "get_instance",
+   "qualname": "GemWriteToFile.get_instance",
+   "source_id": "github.gem.utils.gem_write_to_file",
+   "module": "gem.utils.gem_write_to_file",
+   "file": "external/github/GEMpRF/gem/utils/gem_write_to_file.py",
+   "line": 31,
+   "doc": "",
+   "signature": "(cls)",
+   "calls": []
+  },
+  {
+   "id": "github.gem.utils.gem_write_to_file::GemWriteToFile.write_array_to_h5",
+   "kind": "method",
+   "name": "write_array_to_h5",
+   "qualname": "GemWriteToFile.write_array_to_h5",
+   "source_id": "github.gem.utils.gem_write_to_file",
+   "module": "gem.utils.gem_write_to_file",
+   "file": "external/github/GEMpRF/gem/utils/gem_write_to_file.py",
+   "line": 34,
+   "doc": "Write a NumPy/CuPy array or list of arrays into an HDF5 file with hierarchical groups.",
+   "signature": "(self, data, variable_path, append_to_existing_variable=...)",
+   "calls": [
+    "join",
+    "makedirs",
+    "isinstance",
+    "dirname",
+    "issubdtype",
+    "array",
+    "File",
+    "concatenate",
+    "asnumpy",
+    "create_dataset",
+    "extend",
+    "append",
+    "string_dtype",
+    "resize",
+    "reshape",
+    "ValueError"
+   ]
+  },
+  {
+   "id": "github.gem.utils.hpc_cupy_utils::gem.utils.hpc_cupy_utils",
+   "kind": "module",
+   "name": "hpc_cupy_utils",
+   "qualname": "gem.utils.hpc_cupy_utils",
+   "source_id": "github.gem.utils.hpc_cupy_utils",
+   "module": "gem.utils.hpc_cupy_utils",
+   "file": "external/github/GEMpRF/gem/utils/hpc_cupy_utils.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "HpcUtils"
+   ],
+   "imports": [
+    "os",
+    "cupy",
+    "numpy",
+    "typing",
+    "subprocess"
+   ]
+  },
+  {
+   "id": "github.gem.utils.hpc_cupy_utils::HpcUtils",
+   "kind": "class",
+   "name": "HpcUtils",
+   "qualname": "HpcUtils",
+   "source_id": "github.gem.utils.hpc_cupy_utils",
+   "module": "gem.utils.hpc_cupy_utils",
+   "file": "external/github/GEMpRF/gem/utils/hpc_cupy_utils.py",
+   "line": 18,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "get_number_of_gpus",
+    "get_raw_kernel",
+    "compile_cuda_to_ptx",
+    "get_raw_module",
+    "free_device_memory",
+    "delete_gpu_variables",
+    "print_gpu_memory_stats",
+    "device_available_mem_bytes",
+    "gpu_mem_required_in_gb"
+   ]
+  },
+  {
+   "id": "github.gem.utils.hpc_cupy_utils::HpcUtils.get_number_of_gpus",
+   "kind": "method",
+   "name": "get_number_of_gpus",
+   "qualname": "HpcUtils.get_number_of_gpus",
+   "source_id": "github.gem.utils.hpc_cupy_utils",
+   "module": "gem.utils.hpc_cupy_utils",
+   "file": "external/github/GEMpRF/gem/utils/hpc_cupy_utils.py",
+   "line": 25,
+   "doc": "",
+   "signature": "(cls)",
+   "calls": [
+    "getDeviceCount"
+   ]
+  },
+  {
+   "id": "github.gem.utils.hpc_cupy_utils::HpcUtils.get_raw_kernel",
+   "kind": "method",
+   "name": "get_raw_kernel",
+   "qualname": "HpcUtils.get_raw_kernel",
+   "source_id": "github.gem.utils.hpc_cupy_utils",
+   "module": "gem.utils.hpc_cupy_utils",
+   "file": "external/github/GEMpRF/gem/utils/hpc_cupy_utils.py",
+   "line": 37,
+   "doc": "",
+   "signature": "(cls, kernel_filename, kernel_name)",
+   "calls": [
+    "dirname",
+    "join",
+    "RawKernel",
+    "realpath",
+    "open",
+    "read"
+   ]
+  },
+  {
+   "id": "github.gem.utils.hpc_cupy_utils::HpcUtils.compile_cuda_to_ptx",
+   "kind": "method",
+   "name": "compile_cuda_to_ptx",
+   "qualname": "HpcUtils.compile_cuda_to_ptx",
+   "source_id": "github.gem.utils.hpc_cupy_utils",
+   "module": "gem.utils.hpc_cupy_utils",
+   "file": "external/github/GEMpRF/gem/utils/hpc_cupy_utils.py",
+   "line": 55,
+   "doc": "",
+   "signature": "(cls, cu_file, output_ptx)",
+   "calls": [
+    "print"
+   ]
+  },
+  {
+   "id": "github.gem.utils.hpc_cupy_utils::HpcUtils.get_raw_module",
+   "kind": "method",
+   "name": "get_raw_module",
+   "qualname": "HpcUtils.get_raw_module",
+   "source_id": "github.gem.utils.hpc_cupy_utils",
+   "module": "gem.utils.hpc_cupy_utils",
+   "file": "external/github/GEMpRF/gem/utils/hpc_cupy_utils.py",
+   "line": 70,
+   "doc": "",
+   "signature": "(cls, module_filename_without_ext)",
+   "calls": [
+    "dirname",
+    "join",
+    "RawModule",
+    "realpath",
+    "exists",
+    "compile_cuda_to_ptx"
+   ]
+  },
+  {
+   "id": "github.gem.utils.hpc_cupy_utils::HpcUtils.free_device_memory",
+   "kind": "method",
+   "name": "free_device_memory",
+   "qualname": "HpcUtils.free_device_memory",
+   "source_id": "github.gem.utils.hpc_cupy_utils",
+   "module": "gem.utils.hpc_cupy_utils",
+   "file": "external/github/GEMpRF/gem/utils/hpc_cupy_utils.py",
+   "line": 95,
+   "doc": "",
+   "signature": "(cls)",
+   "calls": [
+    "free_all_blocks",
+    "get_default_memory_pool"
+   ]
+  },
+  {
+   "id": "github.gem.utils.hpc_cupy_utils::HpcUtils.delete_gpu_variables",
+   "kind": "method",
+   "name": "delete_gpu_variables",
+   "qualname": "HpcUtils.delete_gpu_variables",
+   "source_id": "github.gem.utils.hpc_cupy_utils",
+   "module": "gem.utils.hpc_cupy_utils",
+   "file": "external/github/GEMpRF/gem/utils/hpc_cupy_utils.py",
+   "line": 102,
+   "doc": "",
+   "signature": "(cls, variable)",
+   "calls": [
+    "free_device_memory"
+   ]
+  },
+  {
+   "id": "github.gem.utils.hpc_cupy_utils::HpcUtils.print_gpu_memory_stats",
+   "kind": "method",
+   "name": "print_gpu_memory_stats",
+   "qualname": "HpcUtils.print_gpu_memory_stats",
+   "source_id": "github.gem.utils.hpc_cupy_utils",
+   "module": "gem.utils.hpc_cupy_utils",
+   "file": "external/github/GEMpRF/gem/utils/hpc_cupy_utils.py",
+   "line": 108,
+   "doc": "",
+   "signature": "(cls)",
+   "calls": [
+    "print",
+    "get_default_memory_pool",
+    "total_bytes",
+    "used_bytes"
+   ]
+  },
+  {
+   "id": "github.gem.utils.hpc_cupy_utils::HpcUtils.device_available_mem_bytes",
+   "kind": "method",
+   "name": "device_available_mem_bytes",
+   "qualname": "HpcUtils.device_available_mem_bytes",
+   "source_id": "github.gem.utils.hpc_cupy_utils",
+   "module": "gem.utils.hpc_cupy_utils",
+   "file": "external/github/GEMpRF/gem/utils/hpc_cupy_utils.py",
+   "line": 118,
+   "doc": "",
+   "signature": "(cls, device_id)",
+   "calls": [
+    "Device",
+    "memGetInfo",
+    "get_default_memory_pool",
+    "total_bytes",
+    "used_bytes"
+   ]
+  },
+  {
+   "id": "github.gem.utils.hpc_cupy_utils::HpcUtils.gpu_mem_required_in_gb",
+   "kind": "method",
+   "name": "gpu_mem_required_in_gb",
+   "qualname": "HpcUtils.gpu_mem_required_in_gb",
+   "source_id": "github.gem.utils.hpc_cupy_utils",
+   "module": "gem.utils.hpc_cupy_utils",
+   "file": "external/github/GEMpRF/gem/utils/hpc_cupy_utils.py",
+   "line": 140,
+   "doc": "",
+   "signature": "(cls, num_elements)",
+   "calls": [
+    "dtype"
+   ]
+  },
+  {
+   "id": "github.gem.utils.logger::gem.utils.logger",
+   "kind": "module",
+   "name": "logger",
+   "qualname": "gem.utils.logger",
+   "source_id": "github.gem.utils.logger",
+   "module": "gem.utils.logger",
+   "file": "external/github/GEMpRF/gem/utils/logger.py",
+   "line": 1,
+   "doc": "\"@Author  :   Siddharth Mittal\",",
+   "contains": [
+    "Logger"
+   ],
+   "imports": [
+    "inspect",
+    "base64"
+   ]
+  },
+  {
+   "id": "github.gem.utils.logger::Logger",
+   "kind": "class",
+   "name": "Logger",
+   "qualname": "Logger",
+   "source_id": "github.gem.utils.logger",
+   "module": "gem.utils.logger",
+   "file": "external/github/GEMpRF/gem/utils/logger.py",
+   "line": 14,
+   "doc": "",
+   "bases": [],
+   "contains": [
+    "print_red_message",
+    "print_orange_message",
+    "print_blue_message",
+    "print_green_message",
+    "print_yellow_message"
+   ]
+  },
+  {
+   "id": "github.gem.utils.logger::Logger.print_red_message",
+   "kind": "method",
+   "name": "print_red_message",
+   "qualname": "Logger.print_red_message",
+   "source_id": "github.gem.utils.logger",
+   "module": "gem.utils.logger",
+   "file": "external/github/GEMpRF/gem/utils/logger.py",
+   "line": 16,
+   "doc": "",
+   "signature": "(cls, message, print_file_name=...)",
+   "calls": [
+    "print",
+    "currentframe",
+    "getframeinfo"
+   ]
+  },
+  {
+   "id": "github.gem.utils.logger::Logger.print_orange_message",
+   "kind": "method",
+   "name": "print_orange_message",
+   "qualname": "Logger.print_orange_message",
+   "source_id": "github.gem.utils.logger",
+   "module": "gem.utils.logger",
+   "file": "external/github/GEMpRF/gem/utils/logger.py",
+   "line": 24,
+   "doc": "",
+   "signature": "(cls, message, print_file_name=...)",
+   "calls": [
+    "print",
+    "currentframe",
+    "getframeinfo"
+   ]
+  },
+  {
+   "id": "github.gem.utils.logger::Logger.print_blue_message",
+   "kind": "method",
+   "name": "print_blue_message",
+   "qualname": "Logger.print_blue_message",
+   "source_id": "github.gem.utils.logger",
+   "module": "gem.utils.logger",
+   "file": "external/github/GEMpRF/gem/utils/logger.py",
+   "line": 32,
+   "doc": "",
+   "signature": "(cls, message, print_file_name=...)",
+   "calls": [
+    "print",
+    "currentframe",
+    "getframeinfo"
+   ]
+  },
+  {
+   "id": "github.gem.utils.logger::Logger.print_green_message",
+   "kind": "method",
+   "name": "print_green_message",
+   "qualname": "Logger.print_green_message",
+   "source_id": "github.gem.utils.logger",
+   "module": "gem.utils.logger",
+   "file": "external/github/GEMpRF/gem/utils/logger.py",
+   "line": 40,
+   "doc": "",
+   "signature": "(cls, message, print_file_name=...)",
+   "calls": [
+    "print",
+    "currentframe",
+    "getframeinfo"
+   ]
+  },
+  {
+   "id": "github.gem.utils.logger::Logger.print_yellow_message",
+   "kind": "method",
+   "name": "print_yellow_message",
+   "qualname": "Logger.print_yellow_message",
+   "source_id": "github.gem.utils.logger",
+   "module": "gem.utils.logger",
+   "file": "external/github/GEMpRF/gem/utils/logger.py",
+   "line": 48,
+   "doc": "",
+   "signature": "(cls, message, print_file_name=...)",
+   "calls": [
+    "print",
+    "currentframe",
+    "getframeinfo"
+   ]
+  }
+ ],
+ "skipped": []
+}

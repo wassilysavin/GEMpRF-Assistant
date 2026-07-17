@@ -18,6 +18,7 @@ class FallbackKind(str, Enum):
     RELATION = "relation"                  # curated parameter-relation answer
     PARAMETER_MATRIX = "parameter_matrix"  # universal interaction matrix (still 'unanswered' for intake)
     MODEL_CAPABILITY = "model_capability"  # deterministic pRF-model capability answer
+    CODE_ENTITY = "code_entity"            # grounded card for a named code module/class/function
     EXTRACTIVE = "extractive"              # LLM unavailable: stitched evidence sentences
     MECHANISM_REFRAME = "mechanism_reframe"  # clarification's final matrix reframe
 

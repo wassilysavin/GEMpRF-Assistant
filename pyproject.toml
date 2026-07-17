@@ -44,7 +44,7 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.setuptools.package-data]
-gemprf_assistant = ["kb/corpus/*.yaml", "kb/corpus/grounding/*.md"]
+gemprf_assistant = ["kb/corpus/*.yaml", "kb/corpus/*.json", "kb/corpus/grounding/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

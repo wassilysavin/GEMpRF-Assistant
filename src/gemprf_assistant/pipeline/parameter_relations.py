@@ -1,6 +1,9 @@
+import json
 import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -134,6 +137,59 @@ RELATIONS: tuple[Relation, ...] = (
         "the default block; otherwise the default block is used.",
         "website.config_generator",
     ),
+    Relation(
+        ("stimulus.width", "stimulus.height"), "effect",
+        "stimulus width and height set the resampled stimulus geometry: GEM resamples the "
+        "loaded stimulus to this width and height before HRF convolution and uses them in "
+        "signal-synthesis memory calculations, so a larger width or height raises the stimulus "
+        "pixel count, the flattened model-curve size in GPU signal computation, and memory use.",
+        "website.config_generator",
+    ),
+    Relation(
+        ("input.BIDS.run_type",), "effect",
+        "BIDS run_type selects whether analysis runs per input or over concatenated blocks: "
+        "'individual' resolves a flat list of matching files, while 'concatenated' builds "
+        "grouped blocks and drives task-specific stimulus handling.",
+        "website.config_generator",
+    ),
+    Relation(
+        ("input.BIDS.input_file_extension",), "constrain",
+        "BIDS input_file_extension restricts matching to surface files, volume files, or both, "
+        "accepting only .nii.gz, .gii, or 'both'; an unsupported value aborts the run with a "
+        "validation error.",
+        "website.config_generator",
+    ),
+    Relation(
+        ("input.BIDS.space",), "constrain",
+        "BIDS space selects the spatial reference of the input files: fsnative loads each "
+        "subject's own surface, fsaverage the group-averaged surface, T1w volumetric files, and "
+        "'all' overrides the per-subject choice to load every available space; selecting a space "
+        "the derivatives do not contain produces an empty input set.",
+        "website.config_generator",
+    ),
+    Relation(
+        ("gpu.default_gpu",), "effect",
+        "default_gpu is the primary GPU selected in the config: during setup GEM builds "
+        "CUDA_VISIBLE_DEVICES from it and remaps its internal default device to index 0 of that "
+        "filtered list; an invalid value falls back to using all available GPUs.",
+        "website.config_generator",
+    ),
+    Relation(
+        ("gpu.additional_available_gpus",), "effect",
+        "additional_available_gpus is an optional list of extra GPU ids for multi-GPU execution: "
+        "setup dedupes and validates them and exports the combined list through "
+        "CUDA_VISIBLE_DEVICES, so adding valid GPUs splits model-signal computation across more "
+        "devices while invalid ids fall back to using all available GPUs.",
+        "website.config_generator",
+    ),
+    Relation(
+        ("search_space.default_sigmas.min_sigma", "search_space.default_sigmas.max_sigma"), "constrain",
+        "min_sigma and max_sigma are the lower and upper bounds of the default sigma range and "
+        "are used as the start and end of the sigma linspace when custom sigmas are not loaded "
+        "from file, so changing them shifts the edges of the sigma search space without changing "
+        "the number of samples (that is num_sigmas).",
+        "website.config_generator",
+    ),
 )
 
 _INT_RE = re.compile(r"\b(\d+)\b")
@@ -185,6 +241,15 @@ _TRIGGERS: dict[str, tuple[str, ...]] = {
     "stimulus.high_temporal_resolution.slice_time_ref": ("slice_time_ref", "slice time"),
     "stimulus.binarization.threshold": ("binariz", "threshold"),
     "search_space.default_hrf": ("hrf from file", "default_hrf", "hrf"),
+    "stimulus.width": ("stimulus width", "width"),
+    "stimulus.height": ("stimulus height", "height"),
+    "input.BIDS.run_type": ("run_type", "run type"),
+    "input.BIDS.input_file_extension": ("input_file_extension", "file extension"),
+    "input.BIDS.space": ("bids space", "output space", "surface space", "reference space"),
+    "gpu.default_gpu": ("default_gpu", "default gpu"),
+    "gpu.additional_available_gpus": ("additional_available_gpus", "additional gpus", "multi gpu", "multi-gpu"),
+    "search_space.default_sigmas.min_sigma": ("min_sigma", "minimum sigma"),
+    "search_space.default_sigmas.max_sigma": ("max_sigma", "maximum sigma"),
 }
 
 
@@ -287,3 +352,131 @@ _MODEL_CAPABILITY_RE = re.compile(
 def model_capability_question(question: str) -> bool:
     """True when the question asks what a GEM-pRF pRF model can or cannot represent."""
     return bool(_MODEL_CAPABILITY_RE.search(question.lower()))
+
+
+# ---------------------------------------------------------------------------
+# Code-entity fallback: grounded cards for GEM-pRF modules/classes/functions.
+# The artifact is generated from the tool source AST (kb/code_index.py); every field here is
+# read back from that file, so nothing is asserted beyond what the code states. This is a
+# last-resort safety net on the refusal path, behind the curated parameter relations.
+# ---------------------------------------------------------------------------
+_CODE_ENTITIES_PATH = Path(__file__).resolve().parents[1] / "kb" / "corpus" / "code_entities.json"
+
+# Generic tokens that occur in ordinary GEM-pRF questions; never trigger a code card on their own,
+# so a code entity that happens to be named "run" or "data" can't hijack a normal question.
+_CODE_TRIGGER_STOPWORDS = frozenset({
+    "run", "main", "model", "models", "data", "space", "value", "values", "config", "configs",
+    "file", "files", "path", "paths", "name", "info", "load", "save", "build", "reset", "setup",
+    "create", "update", "process", "result", "results", "input", "output", "grid", "batch",
+    "batches", "gpu", "hrf", "prf", "stimulus", "signal", "signals", "analysis", "fitting", "utils",
+})
+_MIN_CODE_TRIGGER_LEN = 4
+
+
+@lru_cache(maxsize=1)
+def _code_entities() -> tuple[dict, ...]:
+    """Load the generated code-entity artifact once, or empty when it is absent."""
+    try:
+        return tuple(json.loads(_CODE_ENTITIES_PATH.read_text(encoding="utf-8"))["entities"])
+    except (OSError, KeyError, ValueError):
+        return ()
+
+
+def _is_triggerable_name(name: str) -> bool:
+    """A public, distinctive simple name worth matching literally (drops dunders, privates, generics)."""
+    return (
+        not name.startswith("_")
+        and len(name) >= _MIN_CODE_TRIGGER_LEN
+        and name.lower() not in _CODE_TRIGGER_STOPWORDS
+    )
+
+
+@lru_cache(maxsize=1)
+def _code_trigger_index() -> dict[str, tuple[int, ...]]:
+    """Map each triggerable simple name / dotted module qualname to the entities that carry it."""
+    index: dict[str, list[int]] = {}
+    for i, e in enumerate(_code_entities()):
+        keys = set()
+        if _is_triggerable_name(e["name"]):
+            keys.add(e["name"].lower())
+        if e["kind"] == "module":
+            keys.add(e["qualname"].lower())  # dotted names are distinctive regardless of length
+        for key in keys:
+            index.setdefault(key, []).append(i)
+    return {k: tuple(v) for k, v in index.items()}
+
+
+@lru_cache(maxsize=512)
+def _code_trigger_res() -> tuple[tuple[re.Pattern, str], ...]:
+    """(pattern, key) pairs for every code trigger, longest key first so specific names win."""
+    keys = sorted(_code_trigger_index(), key=len, reverse=True)
+    return tuple((_keyword_re(k), k) for k in keys)
+
+
+def named_code_entity_ids(question: str) -> list[int]:
+    """Entity indices whose triggerable name the question literally contains, most-specific key first."""
+    index = _code_trigger_index()
+    hits: list[int] = []
+    seen: set[int] = set()
+    for pattern, key in _code_trigger_res():
+        if pattern.search(question):
+            for i in index[key]:
+                if i not in seen:
+                    seen.add(i)
+                    hits.append(i)
+    return hits
+
+
+def _relation_clauses(e: dict) -> str:
+    """Grounded relation clauses (contains / subclass-of / calls / imports) present on the entity."""
+    clauses: list[str] = []
+    if e.get("bases"):
+        clauses.append(f"It subclasses {', '.join(e['bases'])}.")
+    contains = [c for c in e.get("contains", ()) if not c.startswith("_")]
+    if contains:
+        shown = ", ".join(contains[:12])
+        more = "" if len(contains) <= 12 else f", and {len(contains) - 12} more"
+        singular = "member" if e["kind"] == "module" else "method"
+        noun = singular if len(contains) == 1 else f"{singular}s"
+        clauses.append(f"It defines {len(contains)} public {noun}: {shown}{more}.")
+    if e.get("imports"):
+        clauses.append(f"It imports {', '.join(e['imports'][:10])}.")
+    if e.get("calls"):
+        clauses.append(f"It calls {', '.join(e['calls'][:10])}.")
+    return " ".join(clauses)
+
+
+def _render_code_card(e: dict) -> str:
+    """A one-entity grounded card: what it is, where, its signature/doc, and its relations."""
+    where = f"{e['file']}:{e['line']}"
+    if e["kind"] == "module":
+        head = f"`{e['qualname']}` is a GEM-pRF module ({where})."
+    elif e["kind"] == "class":
+        head = f"`{e['name']}` is a class in {e['module']} ({where})."
+    else:
+        sig = e.get("signature", "")
+        head = f"`{e['name']}{sig}` is a {e['kind']} in {e['module']} ({where})."
+    doc = f" {e['doc']}" if e.get("doc") else ""
+    rel = _relation_clauses(e)
+    return f"{head}{doc}{(' ' + rel) if rel else ''}".rstrip()
+
+
+def render_code_entity_answer(question: str) -> str | None:
+    """Grounded card(s) for a code entity the question names, or None when it names none.
+
+    One match renders its full card; several sharing a name are disclosed as a short grounded list
+    rather than guessing which one is meant."""
+    entities = _code_entities()
+    ids = named_code_entity_ids(question)
+    if not ids:
+        return None
+    if len(ids) == 1:
+        return _render_code_card(entities[ids[0]])
+    primary = entities[ids[0]]
+    lead = f"`{primary['name']}` names {len(ids)} things in the GEM-pRF code:"
+    rows = [
+        f"- {e['kind']} `{e['qualname']}` in {e['module']} ({e['file']}:{e['line']})"
+        + (f" -- {e['doc']}" if e.get("doc") else "")
+        for e in (entities[i] for i in ids[:8])
+    ]
+    return "\n".join([lead, *rows])

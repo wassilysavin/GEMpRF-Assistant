@@ -7,6 +7,7 @@ from .parameter_relations import (
     model_capability_question,
     named_param_ids,
     question_names_param,
+    render_code_entity_answer,
     render_parameter_matrix,
     render_relation_answer,
 )
@@ -44,4 +45,8 @@ def relation_fallback(
             answer = render_relation_answer([top.id], question)
             if answer:
                 return answer, FallbackKind.RELATION
+    # Last resort before the generic matrix: a grounded card for a code entity the question names.
+    code_answer = render_code_entity_answer(question)
+    if code_answer is not None:
+        return code_answer, FallbackKind.CODE_ENTITY
     return render_parameter_matrix(), FallbackKind.PARAMETER_MATRIX
