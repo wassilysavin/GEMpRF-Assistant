@@ -2,24 +2,24 @@ import os
 import re
 from dataclasses import asdict, replace
 from pathlib import Path
-from typing import Iterable
 
 import numpy as np
 from langchain_core.prompts import ChatPromptTemplate
 
+from .. import tracing
 from ..embeddings import EmbeddingBackend, build_embedding_backend
 from ..knowledge_base import load_documents, parameter_map, source_map
-from ..paths import data_dir
+from ..llm import build_chat_llm
 from ..models import (
     AnswerResult,
     Citation,
-    Chunk,
     EvidenceItem,
     ParameterSpec,
     QueryAnalysis,
     RetrievedChunk,
     SourceMeta,
 )
+from ..paths import data_dir
 from .chunking import ChunkingConfig, split_documents
 from .knowledge_graph import ChunkTriple, KnowledgeGraphStore
 from .parameter_relations import (
@@ -42,10 +42,6 @@ from .prompts import (
 from .rerank import CrossEncoderReranker, build_reranker
 from .retrieval import HierarchicalRetriever, RetrievalConfig
 from .vector_store import WeaviateHierarchicalStore
-
-from ..llm import build_chat_llm
-from .. import tracing
-
 
 _DEFAULT_TOP_K = 6
 _DEFAULT_RERANK_POOL_SIZE = 12

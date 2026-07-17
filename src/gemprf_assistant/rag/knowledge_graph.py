@@ -1,14 +1,13 @@
 import threading
 import urllib.parse
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Sequence
 
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF, RDFS, SKOS
 
 from ..models import ParameterSpec, ParentSection, SourceMeta
-
 
 SCHEMA = Namespace("https://schema.org/")
 GEMPRF = Namespace("https://gemprf.local/ontology#")

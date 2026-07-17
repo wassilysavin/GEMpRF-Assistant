@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -7,9 +6,9 @@ class SourceMeta:
     id: str
     title: str
     kind: str
-    url: Optional[str] = None
-    local_path: Optional[str] = None
-    description: Optional[str] = None
+    url: str | None = None
+    local_path: str | None = None
+    description: str | None = None
 
 
 @dataclass(frozen=True)
@@ -32,7 +31,7 @@ class ChunkMetadata:
     chunk_id: str
     source_id: str
     source_kind: str
-    parent_id: Optional[str]
+    parent_id: str | None
     heading_path: tuple[str, ...]
     char_span: tuple[int, int]
     token_count: int
@@ -62,8 +61,8 @@ class Chunk:
 class RetrievedChunk:
     chunk: Chunk
     score: float
-    rerank_score: Optional[float] = None
-    parent_score: Optional[float] = None
+    rerank_score: float | None = None
+    parent_score: float | None = None
 
 
 @dataclass
@@ -71,8 +70,8 @@ class Citation:
     id: str
     title: str
     kind: str
-    url: Optional[str] = None
-    local_path: Optional[str] = None
+    url: str | None = None
+    local_path: str | None = None
     heading_path: tuple[str, ...] = field(default_factory=tuple)
 
 

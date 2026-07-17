@@ -4,7 +4,6 @@ import numpy as np
 
 from ..models import ParameterSpec
 
-
 _MIN_PARAMETER_SCORE = 0.32
 _PARAMETER_CUTOFF_MARGIN = 0.05
 _MAX_INITIAL_PARAMETER_CANDIDATES = 8

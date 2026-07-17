@@ -1,12 +1,11 @@
 import hashlib
 import re
 import xml.etree.ElementTree as ET
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Sequence
 
-from ..models import ChunkMetadata, Chunk, ParentSection, SourceMeta
-
+from ..models import Chunk, ChunkMetadata, ParentSection, SourceMeta
 
 _TOKEN_RE = re.compile(r"\S+")
 # Sentence boundary: terminator + whitespace + capital/bracket/backtick.
@@ -31,14 +30,14 @@ def count_tokens(text: str) -> int:
 def chunk_id_for(source_id: str, span: tuple[int, int], text: str) -> str:
     """Build a per-chunk id of the form <source_id>::<start>-<end>::<hash10>.
     """
-    digest = hashlib.sha1(f"{source_id}:{span[0]}:{span[1]}:{text}".encode("utf-8")).hexdigest()
+    digest = hashlib.sha1(f"{source_id}:{span[0]}:{span[1]}:{text}".encode()).hexdigest()
     return f"{source_id}::{span[0]}-{span[1]}::{digest[:10]}"
 
 
 def section_id_for(source_id: str, span: tuple[int, int], heading_path: Sequence[str]) -> str:
     """Build a stable parent-section id of the form <source_id>::section::<hash10>.
     """
-    digest = hashlib.sha1(f"{source_id}:{span}:{'|'.join(heading_path)}".encode("utf-8")).hexdigest()
+    digest = hashlib.sha1(f"{source_id}:{span}:{'|'.join(heading_path)}".encode()).hexdigest()
     return f"{source_id}::section::{digest[:10]}"
 
 

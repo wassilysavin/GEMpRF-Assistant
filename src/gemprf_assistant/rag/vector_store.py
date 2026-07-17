@@ -1,10 +1,9 @@
 import os
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
 
 import numpy as np
-
 import weaviate
 from weaviate.classes.config import Configure, DataType, Property, VectorDistances
 from weaviate.classes.data import DataObject
@@ -13,7 +12,6 @@ from weaviate.util import generate_uuid5
 
 from ..models import Chunk, ChunkMetadata, ParentSection
 from ..paths import data_dir
-
 
 SECTION_COLLECTION = "GemPrfSection"
 CHUNK_COLLECTION = "GemPrfChunk"
@@ -46,11 +44,12 @@ class WeaviateHierarchicalStore:
         http_port: int | None = None,
         grpc_port: int | None = None,
     ) -> None:
-        self._persistence_path = persistence_path or os.getenv(
-            "GEMPRF_ASSISTANT_WEAVIATE_PATH",
-            str(data_dir() / "weaviate"),
+        self._persistence_path = (
+            persistence_path
+            or os.getenv("GEMPRF_ASSISTANT_WEAVIATE_PATH")
+            or str(data_dir() / "weaviate")
         )
-        self._mode = (connect_to or os.getenv("GEMPRF_ASSISTANT_WEAVIATE_MODE", "embedded")).strip().lower()
+        self._mode = (connect_to or os.getenv("GEMPRF_ASSISTANT_WEAVIATE_MODE") or "embedded").strip().lower()
         self._host = host or os.getenv("GEMPRF_ASSISTANT_WEAVIATE_HOST", "localhost")
         self._http_port = http_port or int(os.getenv("GEMPRF_ASSISTANT_WEAVIATE_HTTP_PORT", "8080"))
         self._grpc_port = grpc_port or int(os.getenv("GEMPRF_ASSISTANT_WEAVIATE_GRPC_PORT", "50051"))

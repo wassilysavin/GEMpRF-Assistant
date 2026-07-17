@@ -1,5 +1,5 @@
 import os
-from typing import Sequence
+from collections.abc import Sequence
 
 from ..models import RetrievedChunk
 
@@ -39,7 +39,7 @@ class CrossEncoderReranker:
             self._init_error = "sentence-transformers not installed"
             return
         try:
-            kwargs = {}
+            kwargs: dict[str, object] = {}
             if not self._allow_download:
                 kwargs["local_files_only"] = True
             if self._device:

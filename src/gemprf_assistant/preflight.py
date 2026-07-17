@@ -145,7 +145,7 @@ def check_local_llm() -> None:
     if tok_s is None:
         _warn(f"could not reach Ollama to benchmark {model}; if local inference is unavailable, {_SUGGESTION}")
         return
-    entry = {"verdict": verdict(tok_s), "tok_s": round(tok_s, 1)}
+    entry = {"verdict": verdict(tok_s), "tok_s": round(tok_s, 1)}  # type: ignore[dict-item]
     _save_cache_entry(model, entry)
     _report(model, entry)
     if entry["verdict"] == "ok":

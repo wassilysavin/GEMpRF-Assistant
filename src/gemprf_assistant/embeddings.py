@@ -1,5 +1,6 @@
 import os
-from typing import Protocol, Sequence
+from collections.abc import Sequence
+from typing import Protocol
 
 import numpy as np
 
@@ -140,9 +141,10 @@ def build_embedding_backend() -> EmbeddingBackend:
                 local_files_only=local_only,
             )
         except Exception as sentence_error:
-            if os.getenv("XAI_API_KEY") and os.getenv("GEMPRF_ASSISTANT_XAI_EMBEDDING_MODEL"):
+            xai_embedding_model = os.getenv("GEMPRF_ASSISTANT_XAI_EMBEDDING_MODEL")
+            if os.getenv("XAI_API_KEY") and xai_embedding_model:
                 return OpenAIEmbeddingBackend(
-                    model_name=os.getenv("GEMPRF_ASSISTANT_XAI_EMBEDDING_MODEL"),
+                    model_name=xai_embedding_model,
                     api_key=os.getenv("XAI_API_KEY"),
                     base_url=os.getenv("GEMPRF_ASSISTANT_XAI_BASE_URL", "https://api.x.ai/v1"),
                 )

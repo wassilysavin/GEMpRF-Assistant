@@ -1,7 +1,7 @@
 """Clarification intake: when the engine can't ground an answer, plan question-specific aspects from the failed analysis (falling back to a fixed checklist), ask one question per round over the engine's public analyze(), fold the replies into the query, and answer once."""
 import os
 import re
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -230,7 +230,7 @@ def _parse_aspects(text: str) -> list[str]:
 
 def plan_intake_aspects(
     llm, question: str, analysis: QueryAnalysis
-) -> Optional[list[tuple[str, str]]]:
+) -> list[tuple[str, str]] | None:
     """One LLM call planning question-specific (aspect, canned fallback) pairs from the failed analysis; [] = out-of-scope (refuse without asking), None = planner unavailable/failed (use the static checklist)."""
     if llm is None:
         return None
@@ -279,7 +279,7 @@ def _reformulate_enabled() -> bool:
     return os.getenv("GEMPRF_ASSISTANT_CLARIFY_REFORMULATE", "1").strip() != "0"
 
 
-def reformulate_query(llm, question: str, asked: list[tuple[str, str]]) -> Optional[str]:
+def reformulate_query(llm, question: str, asked: list[tuple[str, str]]) -> str | None:
     """Synthesize the vague question + gathered context into one concrete GEM-pRF query (None on error/empty)."""
     if llm is None:
         return None
@@ -385,7 +385,7 @@ _RECALL_HUMAN_PROMPT = (
 )
 
 
-def recall_aspect_from_history(llm, history, aspect: str) -> Optional[str]:
+def recall_aspect_from_history(llm, history, aspect: str) -> str | None:
     """Extract the aspect's answer already present in the session history (None when not covered, no history, or error)."""
     if llm is None or not history:
         return None
@@ -403,8 +403,8 @@ def recall_aspect_from_history(llm, history, aspect: str) -> Optional[str]:
 
 
 def generate_intake_question(
-    llm, question: str, aspect: str, asked: Optional[list[tuple[str, str]]] = None
-) -> Optional[str]:
+    llm, question: str, aspect: str, asked: list[tuple[str, str]] | None = None
+) -> str | None:
     """Ask the LLM for one intake question about `aspect` (None if it declines with NO_CLARIFICATION or errors); `asked` is the history so it doesn't repeat."""
     if llm is None:
         return None
@@ -431,7 +431,7 @@ def answer_with_clarification(
     question: str,
     input_fn: Callable[[str], str] = input,
     output_fn: Callable[[str], None] = print,
-    max_rounds: Optional[int] = None,
+    max_rounds: int | None = None,
     history=None,
 ) -> QueryAnalysis:
     """Answer a question; if ungrounded, plan question-specific aspects (static checklist as fallback) and walk them (one question/round, folding replies), re-analyzing after each reply and stopping as soon as it grounds (out-of-scope refuses without asking). `history` resolves follow-up references across REPL turns and pre-fills intake aspects it already answers."""
@@ -446,7 +446,7 @@ def _answer_with_clarification(
     question: str,
     input_fn: Callable[[str], str],
     output_fn: Callable[[str], None],
-    max_rounds: Optional[int],
+    max_rounds: int | None,
     history,
 ) -> QueryAnalysis:
     if max_rounds is None:
@@ -488,7 +488,7 @@ def _answer_with_clarification(
         situation = planned if planned is not None else list(INTAKE_ASPECTS[1:])
         aspects = [GOAL_ASPECT] + situation
     else:
-        aspects = INTAKE_ASPECTS
+        aspects = list(INTAKE_ASPECTS)
 
     target = min(len(aspects), max_rounds)
     asked: list[tuple[str, str]] = []

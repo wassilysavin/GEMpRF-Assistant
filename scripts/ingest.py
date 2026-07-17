@@ -11,7 +11,7 @@ try:
 except ImportError:
     pass
 
-from gemprf_assistant.rag.engine import GraphRagEngine
+from gemprf_assistant.rag.engine import GraphRagEngine  # noqa: E402  (dotenv load above)
 
 
 def main() -> None:

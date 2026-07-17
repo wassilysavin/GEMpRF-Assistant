@@ -6,8 +6,9 @@ helper is a silent no-op. GEMPRF_ASSISTANT_TRACING=0 is the kill switch.
 """
 import os
 from contextlib import contextmanager
+from typing import Any
 
-_STATE = {"checked": False, "client": None, "handler": None, "url_broken": False}
+_STATE: dict[str, Any] = {"checked": False, "client": None, "handler": None, "url_broken": False}
 
 
 def _requested() -> bool:

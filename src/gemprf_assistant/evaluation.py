@@ -4,10 +4,10 @@ import os
 import re
 import sys
 import time
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from statistics import mean
-from typing import Iterable
 
 try:
     from . import tracing
@@ -210,6 +210,7 @@ def judge_case(llm, case: dict, model_answer: str, evidence: list[dict]) -> dict
     """Score one model answer with the LLM judge, returns {score, grounded, rationale}.
     """
     from langchain_core.prompts import ChatPromptTemplate
+
     from .rag.prompts import JUDGE_SYSTEM_PROMPT
 
     context = "\n\n".join(f"[{e['source_id']}] {e['text']}" for e in evidence) or "(no context retrieved)"
@@ -255,7 +256,7 @@ def build_ragas_metrics(*, llm=None, embedding_backend=None) -> dict | None:
         return None
     try:
         try:
-            import nest_asyncio 
+            import nest_asyncio
 
             nest_asyncio.apply = lambda *a, **kw: None 
         except Exception:
