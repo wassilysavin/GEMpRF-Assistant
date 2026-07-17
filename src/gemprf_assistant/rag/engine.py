@@ -10,8 +10,10 @@ from ..config import get_settings
 from ..knowledge_base import load_documents, parameter_map, source_map
 from ..models import (
     AnswerResult,
+    AnswerStatus,
     Citation,
     EvidenceItem,
+    FallbackKind,
     ParameterSpec,
     QueryAnalysis,
     RetrievedChunk,
@@ -265,21 +267,32 @@ class GraphRagEngine:
             "sources": len(self.sources),
         }
 
+    def answer(self, question: str, top_k: int = _DEFAULT_TOP_K, history=None,
+               clarify: bool = False, input_fn=input, output_fn=print) -> QueryAnalysis:
+        """Single entrypoint for every caller: the core pipeline, optionally wrapped in the clarification intake."""
+        if not clarify:
+            return self.analyze(question, top_k=top_k, history=history)
+        from ..clarification import answer_with_clarification
+
+        return answer_with_clarification(self, question, input_fn=input_fn, output_fn=output_fn, history=history)
+
     def ask(self, question: str, top_k: int = _DEFAULT_TOP_K, history=None) -> AnswerResult:
-        analysis = self.analyze(question, top_k=top_k, history=history)
+        analysis = self.answer(question, top_k=top_k, history=history)
         return AnswerResult(
             answer=analysis.answer,
             status=analysis.status,
             matched_parameters=analysis.matched_parameter_labels,
             citations=analysis.citations,
             used_llm=analysis.used_llm,
+            fallback=analysis.fallback,
         )
 
     def ask_dict(self, question: str, top_k: int = _DEFAULT_TOP_K, history=None) -> dict:
-        result = self.analyze(question, top_k=top_k, history=history)
+        result = self.answer(question, top_k=top_k, history=history)
         return {
             "answer": result.answer,
-            "status": result.status,
+            "status": getattr(result.status, "value", result.status),
+            "fallback": getattr(result.fallback, "value", result.fallback),
             "matched_parameters": result.matched_parameter_labels,
             "matched_parameter_ids": result.matched_parameter_ids,
             "evidence": [asdict(item) for item in result.evidence],
@@ -361,13 +374,14 @@ class GraphRagEngine:
             # Retrieval found nothing, but a matched parameter may carry corpus-grounded
             # relations; answer deterministically from those rather than refusing outright.
             with tracing.span("relation_fallback", input={"trigger": "no_supporting_evidence"}) as sp:
-                relation_answer = self._relation_fallback(question, matched_specs, matched_parameter_scores)
-                sp.update(output={"answered": relation_answer is not None})
-            if relation_answer is not None:
+                fallback_result = self._relation_fallback(question, matched_specs, matched_parameter_scores)
+                sp.update(output={"answered": fallback_result is not None})
+            if fallback_result is not None:
+                fallback_answer, fallback_kind = fallback_result
                 return QueryAnalysis(
                     question=question,
-                    answer=relation_answer,
-                    status="supported",
+                    answer=fallback_answer,
+                    status=AnswerStatus.DEGRADED,
                     matched_parameter_ids=[spec.id for spec in matched_specs],
                     matched_parameter_labels=[spec.label for spec in matched_specs],
                     evidence=self._to_evidence_items(evidence),
@@ -376,11 +390,12 @@ class GraphRagEngine:
                     rerank_used=rerank_used,
                     rewritten_query=rewritten,
                     contextualized_question=contextualized,
+                    fallback=fallback_kind,
                 )
             return QueryAnalysis(
                 question=question,
                 answer=INSUFFICIENT_EVIDENCE_MESSAGE,
-                status="insufficient_evidence",
+                status=AnswerStatus.INSUFFICIENT_EVIDENCE,
                 matched_parameter_ids=[spec.id for spec in matched_specs],
                 matched_parameter_labels=[spec.label for spec in matched_specs],
                 evidence=self._to_evidence_items(evidence),
@@ -395,20 +410,27 @@ class GraphRagEngine:
         # reference resolution, and prior (often refusal-laden) turns would only bias the fresh answer.
         answer_history = history if is_followup else None
         with tracing.span("generate_answer", input={"question": question}) as sp:
-            answer, used_llm = self._generate_answer(question, matched_specs, evidence, rewritten, answer_history)
+            answer, used_llm, fallback = self._generate_answer(question, matched_specs, evidence, rewritten, answer_history)
             sp.update(output={"answer": answer, "used_llm": used_llm})
         # Refusal-only fallback: if the LLM refused, back off to corpus-grounded relations
         # rather than perturbing answers it could already ground from retrieval.
         if answer == INSUFFICIENT_EVIDENCE_MESSAGE:
             with tracing.span("relation_fallback", input={"trigger": "llm_refusal"}) as sp:
-                relation_answer = self._relation_fallback(question, matched_specs, matched_parameter_scores)
-                sp.update(output={"answered": relation_answer is not None})
-            if relation_answer is not None:
-                answer, used_llm = relation_answer, False
+                fallback_result = self._relation_fallback(question, matched_specs, matched_parameter_scores)
+                sp.update(output={"answered": fallback_result is not None})
+            if fallback_result is not None:
+                answer, fallback = fallback_result
+                used_llm = False
+        if answer == INSUFFICIENT_EVIDENCE_MESSAGE:
+            status = AnswerStatus.INSUFFICIENT_EVIDENCE
+        elif fallback is not FallbackKind.NONE:
+            status = AnswerStatus.DEGRADED
+        else:
+            status = AnswerStatus.SUPPORTED
         return QueryAnalysis(
             question=question,
             answer=answer,
-            status="supported",
+            status=status,
             matched_parameter_ids=[spec.id for spec in matched_specs],
             matched_parameter_labels=[spec.label for spec in matched_specs],
             evidence=self._to_evidence_items(evidence),
@@ -417,6 +439,7 @@ class GraphRagEngine:
             rerank_used=rerank_used,
             rewritten_query=rewritten,
             contextualized_question=contextualized,
+            fallback=fallback,
         )
 
     def describe(self) -> dict:
@@ -685,7 +708,7 @@ class GraphRagEngine:
         evidence: list[RetrievedChunk],
         rewritten_query: str | None = None,
         history=None,
-    ) -> tuple[str, bool]:
+    ) -> tuple[str, bool, FallbackKind]:
         if self.llm is not None:
             import time as _time
             attempts = get_settings().llm_retries
@@ -695,8 +718,8 @@ class GraphRagEngine:
                     answer = self._generate_with_llm(question, matched_specs, evidence, rewritten_query, history)
                     # Match the refusal sentinel anywhere: small models wrap it in a preamble ("...Therefore: INSUFFICIENT_EVIDENCE:..."), which startswith misses and then surfaces as a bogus grounded answer.
                     if "INSUFFICIENT_EVIDENCE" not in answer.upper():
-                        return _strip_citations(answer), True
-                    return INSUFFICIENT_EVIDENCE_MESSAGE, False
+                        return _strip_citations(answer), True, FallbackKind.NONE
+                    return INSUFFICIENT_EVIDENCE_MESSAGE, False, FallbackKind.NONE
                 except Exception as exc:  # usually transient (rate limit / timeout)
                     last_exc = exc
                     if i < attempts - 1:
@@ -706,7 +729,10 @@ class GraphRagEngine:
             import sys as _sys
             print(f"[_generate_answer] LLM failed after {attempts} attempts: "
                   f"{type(last_exc).__name__}: {str(last_exc)[:160]}", file=_sys.stderr, flush=True)
-        return self._extractive(evidence), False
+        extracted = self._extractive(evidence)
+        if extracted == INSUFFICIENT_EVIDENCE_MESSAGE:
+            return extracted, False, FallbackKind.NONE
+        return extracted, False, FallbackKind.EXTRACTIVE
 
     def _generate_with_llm(
         self,
@@ -755,16 +781,17 @@ class GraphRagEngine:
         question: str,
         matched_specs: list[ParameterSpec] | None = None,
         matched_scores: dict[str, float] | None = None,
-    ) -> str | None:
+    ) -> tuple[str, FallbackKind] | None:
         """Grounded fallback for the refusal paths: target the parameter the question names or
         confidently matches, else fall back to the universal parameter-interaction matrix."""
         if not get_settings().relations_enabled:
             return None
         if model_capability_question(question):
-            return MODEL_CAPABILITY_ANSWER
+            return MODEL_CAPABILITY_ANSWER, FallbackKind.MODEL_CAPABILITY
         named = named_param_ids(question)
         if named:
-            return render_relation_answer(named, question)
+            answer = render_relation_answer(named, question)
+            return (answer, FallbackKind.RELATION) if answer is not None else None
         # No curated trigger (e.g. bare "measured_data"): target the top embedding match when it is a
         # confident, relation-covered hit the question literally names, else the matrix (guards off-topic ~0.7).
         specs = matched_specs or []
@@ -778,8 +805,8 @@ class GraphRagEngine:
             ):
                 answer = render_relation_answer([top.id], question)
                 if answer:
-                    return answer
-        return render_parameter_matrix()
+                    return answer, FallbackKind.RELATION
+        return render_parameter_matrix(), FallbackKind.PARAMETER_MATRIX
 
     @staticmethod
     def _extractive(evidence: list[RetrievedChunk]) -> str:

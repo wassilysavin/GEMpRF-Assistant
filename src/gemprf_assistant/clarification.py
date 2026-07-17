@@ -6,12 +6,8 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from . import tracing
 from .config import get_settings
-from .models import QueryAnalysis
+from .models import AnswerStatus, FallbackKind, QueryAnalysis
 from .rag.parameter_relations import PARAMETER_MATRIX
-from .rag.prompts import INSUFFICIENT_EVIDENCE_MESSAGE
-
-# The engine's relation fallback returns this universal matrix (status "supported") when it can't ground; treat it as ungrounded.
-_MATRIX_PREFIX = PARAMETER_MATRIX.split("\n", 1)[0]
 
 _NO_CLARIFICATION = "NO_CLARIFICATION"
 
@@ -184,7 +180,7 @@ def _planner_enabled() -> bool:
 
 def _failure_mode(analysis: QueryAnalysis) -> str:
     """Human-readable reason the engine refused, so the planner can target its aspects."""
-    if (analysis.answer or "").strip().startswith(_MATRIX_PREFIX):
+    if analysis.fallback == FallbackKind.PARAMETER_MATRIX:
         return ("the question looks like a parameter-relation (what-if) question that the "
                 "system could only meet with a generic parameter matrix")
     return "no sufficiently grounded evidence was found for the question as asked"
@@ -341,23 +337,20 @@ def _mechanism_enabled() -> bool:
 
 
 def _to_mechanism_answer(analysis: QueryAnalysis) -> QueryAnalysis:
-    """Reframe the refusal-prefixed matrix fallback as a helpful mechanism answer (in place, returned)."""
-    answer = (analysis.answer or "").strip()
-    if not answer.startswith(_MATRIX_PREFIX):
+    """Reframe the matrix fallback as a helpful mechanism answer (in place, returned)."""
+    if analysis.fallback != FallbackKind.PARAMETER_MATRIX:
         return analysis  # only reframe the matrix body; leave plain refusals untouched
     analysis.answer = f"{_MECHANISM_LEAD}\n\n{_MATRIX_BODY}"
-    analysis.status = "mechanism"  # not "insufficient_evidence": this is a deliberate answer
+    analysis.status = AnswerStatus.MECHANISM  # not a refusal: this is a deliberate answer
+    analysis.fallback = FallbackKind.MECHANISM_REFRAME
     return analysis
 
 
 def is_unanswered(analysis: QueryAnalysis) -> bool:
-    """True when analyze() didn't ground an answer: the refusal (incl. sentinel-wrapped), the status-lies refusal, or the engine's parameter-matrix fallback."""
-    answer = (analysis.answer or "").strip()
+    """True when analyze() didn't ground an answer: an honest refusal, or the generic parameter-matrix fallback (a relation/capability/extractive fallback counts as answered)."""
     return (
-        analysis.status == "insufficient_evidence"
-        or answer == INSUFFICIENT_EVIDENCE_MESSAGE
-        or "INSUFFICIENT_EVIDENCE" in answer.upper()
-        or answer.startswith(_MATRIX_PREFIX)
+        analysis.status == AnswerStatus.INSUFFICIENT_EVIDENCE
+        or analysis.fallback == FallbackKind.PARAMETER_MATRIX
     )
 
 

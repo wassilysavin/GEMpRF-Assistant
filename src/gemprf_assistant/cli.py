@@ -64,9 +64,7 @@ def _print_analysis_result(analysis) -> None:
 
 def _answer_question(engine, question: str, history=None):
     """Answer one question; the clarifier asks follow-ups when it can't ground it, and stops on its own if no reply is available (EOF)."""
-    from .clarification import answer_with_clarification
-
-    analysis = answer_with_clarification(engine, question, history=history)
+    analysis = engine.answer(question, history=history, clarify=True)
     _print_analysis_result(analysis)
     return analysis
 
