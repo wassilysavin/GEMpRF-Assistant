@@ -2,8 +2,8 @@ from pathlib import Path
 
 from langchain_core.documents import Document
 
-from .models import ParameterSpec, SourceMeta
-from .paths import corpus_root
+from ..models import ParameterSpec, SourceMeta
+from ..paths import corpus_root
 
 ROOT = corpus_root()
 

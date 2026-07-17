@@ -2,6 +2,7 @@ from collections.abc import Sequence
 
 from ..config import get_settings
 from ..models import RetrievedChunk
+from ..observability import get_logger
 
 try:
     from sentence_transformers import CrossEncoder
@@ -22,6 +23,16 @@ class CrossEncoderReranker:
         self._model = None
         self._init_error: str | None = None
         self._tried_load = False
+        self._warned = False
+
+    def _warn_degraded(self) -> None:
+        """Rerank silently falling back to embedding order bit us in production once; say it out loud, once."""
+        if not self._warned:
+            get_logger(__name__).warning(
+                "cross-encoder reranker unavailable (%s); falling back to embedding-score order",
+                self._init_error or "model not loaded",
+            )
+            self._warned = True
 
     @property
     def available(self) -> bool:
@@ -65,14 +76,16 @@ class CrossEncoderReranker:
         if not candidates:
             return [], False
         if not self.available or self._model is None:
+            self._warn_degraded()
             ordered = sorted(candidates, key=lambda r: r.score, reverse=True)
             return list(ordered[:top_k] if top_k else ordered), False
 
         pairs = [(question, c.chunk.text) for c in candidates]
         try:
             scores = self._model.predict(pairs)
-        except Exception as exc:  
+        except Exception as exc:
             self._init_error = f"predict failed: {exc}"
+            self._warn_degraded()
             ordered = sorted(candidates, key=lambda r: r.score, reverse=True)
             return list(ordered[:top_k] if top_k else ordered), False
 

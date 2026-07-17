@@ -186,7 +186,7 @@ def judge_case(llm, case: dict, model_answer: str, evidence: list[dict]) -> dict
     """
     from langchain_core.prompts import ChatPromptTemplate
 
-    from .rag.prompts import JUDGE_SYSTEM_PROMPT
+    from .pipeline.prompts import JUDGE_SYSTEM_PROMPT
 
     context = "\n\n".join(f"[{e['source_id']}] {e['text']}" for e in evidence) or "(no context retrieved)"
     user = (
@@ -478,7 +478,7 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     sys.path.insert(0, str(ROOT / "src"))
-    from gemprf_assistant.rag.engine import GraphRagEngine
+    from gemprf_assistant.pipeline.engine import GraphRagEngine
 
     cases = load_eval_set(args.dataset)
     if args.offset:

@@ -7,7 +7,7 @@ import urllib.request
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-from .paths import data_dir
+from ..paths import data_dir
 
 MANIFEST_NAME = "snapshot_manifest.json"
 
@@ -15,7 +15,7 @@ MANIFEST_NAME = "snapshot_manifest.json"
 def _backend_name() -> str:
     """Best-effort name of the currently configured embedding backend (the one that built the index)."""
     try:
-        from .providers import build_embedding_backend
+        from ..providers import build_embedding_backend
         return build_embedding_backend().backend_name
     except Exception:
         return "unknown"

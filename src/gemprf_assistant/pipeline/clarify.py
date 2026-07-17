@@ -4,10 +4,13 @@ from collections.abc import Callable
 
 from langchain_core.prompts import ChatPromptTemplate
 
-from . import tracing
-from .config import get_settings
-from .models import AnswerStatus, FallbackKind, QueryAnalysis
-from .rag.parameter_relations import PARAMETER_MATRIX
+from .. import tracing
+from ..config import get_settings
+from ..models import AnswerStatus, FallbackKind, QueryAnalysis
+from ..observability import get_logger
+from .parameter_relations import PARAMETER_MATRIX
+
+logger = get_logger(__name__)
 
 _NO_CLARIFICATION = "NO_CLARIFICATION"
 
@@ -138,7 +141,8 @@ def classify_question(llm, question: str) -> str:
             [("system", _CLASSIFY_SYSTEM_PROMPT), ("human", _CLASSIFY_HUMAN_PROMPT)]
         ).format_messages(question=question)
         response = llm.invoke(messages, **tracing.invoke_kwargs())
-    except Exception:
+    except Exception as exc:
+        logger.debug("classify LLM call failed, deterministic gates take over: %s", exc)
         return ""
     text = str(getattr(response, "content", response)).upper()
     for kind in _QUESTION_KINDS:
@@ -237,7 +241,8 @@ def plan_intake_aspects(
             question=question, failure=_failure_mode(analysis), corpus=_corpus_block(analysis)
         )
         response = llm.invoke(messages, **tracing.invoke_kwargs())
-    except Exception:
+    except Exception as exc:
+        logger.debug("clarification LLM helper failed, falling back: %s", exc)
         return None
     text = str(getattr(response, "content", response)).strip()
     if _NO_CLARIFICATION in text.upper():
@@ -284,7 +289,8 @@ def reformulate_query(llm, question: str, asked: list[tuple[str, str]]) -> str |
             [("system", REFORMULATE_SYSTEM_PROMPT), ("human", REFORMULATE_HUMAN_PROMPT)]
         ).format_messages(question=question, context=_context_block(asked))
         response = llm.invoke(messages, **tracing.invoke_kwargs())
-    except Exception:
+    except Exception as exc:
+        logger.debug("clarification LLM helper failed, falling back: %s", exc)
         return None
     text = str(getattr(response, "content", response)).strip().strip("\"'`")
     return text or None
@@ -315,7 +321,8 @@ def answer_is_relevant(llm, question: str, asked: list[tuple[str, str]], answer:
             [("system", RELEVANCE_SYSTEM_PROMPT), ("human", RELEVANCE_HUMAN_PROMPT)]
         ).format_messages(question=question, context=_context_block(asked), answer=answer[:1500])
         response = llm.invoke(messages, **tracing.invoke_kwargs())
-    except Exception:
+    except Exception as exc:
+        logger.debug("relevance check failed, keeping the answer: %s", exc)
         return True
     return "OFFTOPIC" not in str(getattr(response, "content", response)).upper().replace(" ", "")
 
@@ -387,7 +394,8 @@ def recall_aspect_from_history(llm, history, aspect: str) -> str | None:
             [("system", _RECALL_SYSTEM_PROMPT), ("human", _RECALL_HUMAN_PROMPT)]
         ).format_messages(history=history.render(), aspect=aspect)
         response = llm.invoke(messages, **tracing.invoke_kwargs())
-    except Exception:
+    except Exception as exc:
+        logger.debug("clarification LLM helper failed, falling back: %s", exc)
         return None
     text = str(getattr(response, "content", response)).strip().strip("\"'`")
     if not text or _NOT_COVERED in text.upper() or len(text) > 300:
@@ -407,7 +415,8 @@ def generate_intake_question(
             [("system", system_prompt), ("human", INTAKE_HUMAN_PROMPT)]
         ).format_messages(question=question, aspect=aspect, prior=_prior_block(asked or []))
         response = llm.invoke(messages, **tracing.invoke_kwargs())
-    except Exception:
+    except Exception as exc:
+        logger.debug("clarification LLM helper failed, falling back: %s", exc)
         return None
     text = str(getattr(response, "content", response)).strip().strip("\"'`")
     if not text or _NO_CLARIFICATION in text.upper():

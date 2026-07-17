@@ -18,7 +18,7 @@ except ImportError:
 
 from . import tracing  # noqa: E402  (env setup above must precede package imports)
 from .evaluation import evaluate, format_table, load_eval_set  # noqa: E402
-from .rag.engine import GraphRagEngine  # noqa: E402
+from .pipeline.engine import GraphRagEngine  # noqa: E402
 
 _SOURCE_TYPE_TAG = {
     "paper": "paper",
@@ -129,8 +129,8 @@ def main() -> None:
 
     # Snapshot commands must run without booting the engine (no index may exist yet).
     if args.command == "snapshot":
+        from .kb.snapshot import install, pack
         from .paths import data_dir
-        from .snapshot import install, pack
 
         if args.snapshot_command == "pack":
             print(f"Wrote {pack(args.out)}")

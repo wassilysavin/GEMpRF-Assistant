@@ -1,3 +1,3 @@
-from .rag.engine import GraphRagEngine
+from .pipeline.engine import GraphRagEngine
 
 __all__ = ["GraphRagEngine"]

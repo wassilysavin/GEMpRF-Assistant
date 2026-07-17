@@ -5,6 +5,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from . import tracing
 from .config import get_settings
+from .observability import get_logger
 
 _DEFAULT_MAX_TURNS = 4
 # Per-turn answer cap keeps the history block's LLM prefill bounded.
@@ -75,7 +76,8 @@ class ConversationHistory:
                 [("system", _CONDENSE_SYSTEM), ("human", _CONDENSE_HUMAN)]
             ).format_messages(history=self.render(), question=question)
             response = llm.invoke(messages, **tracing.invoke_kwargs())
-        except Exception:
+        except Exception as exc:
+            get_logger(__name__).warning("history condense failed, using the raw question: %s", exc)
             return question
         text = str(getattr(response, "content", response)).strip().strip("\"'`")
         return text or question

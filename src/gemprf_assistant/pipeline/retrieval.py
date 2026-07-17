@@ -4,9 +4,9 @@ from dataclasses import dataclass
 import numpy as np
 
 from ..config import get_settings
+from ..kb.knowledge_graph import KnowledgeGraphStore
 from ..models import RetrievedChunk
-from .knowledge_graph import KnowledgeGraphStore
-from .vector_store import ChunkHit, SectionHit, WeaviateHierarchicalStore
+from ..store.weaviate import ChunkHit, SectionHit, WeaviateHierarchicalStore
 
 
 def _diverse_topk(

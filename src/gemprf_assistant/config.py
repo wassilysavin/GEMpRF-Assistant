@@ -111,6 +111,7 @@ class Settings:
     # Misc
     preflight_enabled: bool
     kg_path: str | None
+    log_level: str
 
     def resolve_llm_provider(self) -> str | None:
         """The shared ollama/xai/openai dispatch rule (explicit provider, else inferred from keys)."""
@@ -184,6 +185,7 @@ class Settings:
             clarify_max_rounds=(lambda raw: max(1, int(raw)) if raw else None)(_str("CLARIFY_MAX_ROUNDS", "")),
             preflight_enabled=_str("PREFLIGHT", "1").strip().lower() not in {"0", "false", "no"},
             kg_path=_opt("KG_PATH"),
+            log_level=_str("LOG_LEVEL", "WARNING").strip().upper(),
         )
 
 
