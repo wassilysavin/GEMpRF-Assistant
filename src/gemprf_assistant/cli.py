@@ -114,6 +114,11 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    if args.command in {"ask", "repl"}:
+        from .preflight import check_local_llm
+
+        check_local_llm()
+
     engine = GraphRagEngine()
 
     try:
@@ -179,6 +184,10 @@ def ask_main() -> None:
     parser.add_argument("--top-k", type=int, default=6, help="Chunks to retrieve (default 6).")
     parser.add_argument("--json", action="store_true", help="Print the full response as JSON.")
     args = parser.parse_args()
+
+    from .preflight import check_local_llm
+
+    check_local_llm()
 
     engine = GraphRagEngine()
     try:
