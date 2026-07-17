@@ -125,11 +125,18 @@ gemprf-assistant snapshot install <url-or-path>   # ~6 MB; skips the 10-20 min l
 gemprf-assistant ask "What does nDCT do?"
 ```
 
-The index and caches live in your OS data dir (`gemprf-assistant config show` prints it) — not in whatever directory you happened to launch from. On first use the preflight benchmarks your machine once; if local inference would be too slow it tells you, and you can switch to the hosted API:
+The index and caches live in your OS data dir (`gemprf-assistant config show` prints it) — not in whatever directory you happened to launch from. On startup the preflight checks the chosen model's size instantly (sub-4B models are too weak for reliable grounded answers) and benchmarks your machine's generation speed once; if either is insufficient it tells you and suggests the hosted chat or the xAI API:
 
 ```bash
 export XAI_API_KEY=...
 gemprf-assistant config set llm_provider xai   # persisted; env vars still win
+```
+
+To run a different local model, pick any model you have pulled into Ollama:
+
+```bash
+gemprf-assistant models                              # lists installed models + size + measured speed
+gemprf-assistant config set ollama_model qwen2.5:7b  # warns if the model isn't pulled or is too small
 ```
 
 **Develop it** (maintainer — corpus + rebuildable index): clone with submodules and use `run.sh`.

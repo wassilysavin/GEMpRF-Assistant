@@ -94,7 +94,7 @@ def _print_analysis(analysis) -> None:
 
 
 def _run_config_command(args) -> None:
-    """show / path / set for the persisted user settings (no engine, no network)."""
+    """show / path / set for the persisted user settings (no engine; set validates the model against Ollama best-effort)."""
     from .config import USER_CONFIG_KEYS, _user_config, get_settings
     from .paths import data_dir, user_config_path
 
@@ -117,6 +117,24 @@ def _run_config_command(args) -> None:
         print(f"{'Unset' if args.value == '' else 'Set'} {key} in {path}")
         if os.getenv("GEMPRF_ASSISTANT_" + key.upper()):
             print(f"note: the environment still sets GEMPRF_ASSISTANT_{key.upper()}, which takes precedence.")
+        if key == "ollama_model" and args.value:
+            from .preflight import MIN_PARAMS_B, ollama_model_tags, parse_params_b
+
+            tags = ollama_model_tags()
+            by_name = {t["name"]: t for t in tags} if tags is not None else None
+            if by_name is not None:
+                tag = by_name.get(args.value) or by_name.get(f"{args.value}:latest")
+                if tag is None:
+                    print(f"note: '{args.value}' is not installed in Ollama yet — run `ollama pull {args.value}`.")
+                    if by_name:
+                        print("installed models: " + ", ".join(sorted(by_name)))
+                else:
+                    params_b = parse_params_b(str(tag.get("details", {}).get("parameter_size", "")))
+                    if params_b is not None and params_b < MIN_PARAMS_B:
+                        print(
+                            f"note: {args.value} has only {params_b:.1f}B parameters — likely too weak for "
+                            f"reliable grounded answers; prefer a {MIN_PARAMS_B:.0f}B+ model or the xAI API."
+                        )
         return
 
     stored = _user_config()
@@ -136,6 +154,36 @@ def _run_config_command(args) -> None:
         print(f"{key:<18}{str(value or '(unset)'):<34}{source}")
     provider = settings.resolve_llm_provider()
     print(f"\nresolved LLM provider: {provider or '(none available)'}")
+
+
+def _run_models_command() -> None:
+    """List locally installed Ollama models with size, strength verdict, and any measured speed (no engine, no index)."""
+    from .config import get_settings
+    from .preflight import MIN_PARAMS_B, cached_entry, ollama_model_tags, parse_params_b
+
+    settings = get_settings()
+    provider = settings.resolve_llm_provider()
+    tags = ollama_model_tags()
+    if tags is None:
+        print("Could not reach Ollama — is it running? (install from https://ollama.com, then `ollama pull <model>`)")
+        return
+    if not tags:
+        print("No Ollama models installed yet — pull one with `ollama pull <model>`.")
+        return
+    active = settings.ollama_model
+    print(f"{'':<3}{'model':<30}{'size':<8}{'speed':<14}note")
+    for tag in sorted(tags, key=lambda t: t["name"]):
+        name = tag["name"]
+        params_b = parse_params_b(str(tag.get("details", {}).get("parameter_size", "")))
+        size = f"{params_b:.1f}B" if params_b is not None else "-"
+        tok_s = (cached_entry(name) or {}).get("tok_s")
+        speed = f"{tok_s:.1f} tok/s" if tok_s else "-"
+        note = f"too small — prefer {MIN_PARAMS_B:.0f}B+" if params_b is not None and params_b < MIN_PARAMS_B else ""
+        marker = "*" if name in (active, f"{active}:latest") else " "
+        print(f"{marker:<3}{name:<30}{size:<8}{speed:<14}{note}")
+    status = "used for answers" if provider == "ollama" else f"inactive: resolved provider is {provider}"
+    print(f"\n* active model ({status}); speed is benchmarked on first use.")
+    print("switch with: gemprf-assistant config set ollama_model <name>")
 
 
 def main() -> None:
@@ -168,6 +216,8 @@ def main() -> None:
     build_parser = index_sub.add_parser("build", help="Chunk + embed the corpus into Weaviate and rebuild kg.ttl")
     build_parser.add_argument("--force", action="store_true", help="Rebuild even when an index already exists")
 
+    subparsers.add_parser("models", help="List installed Ollama models and which one answers questions")
+
     config_parser = subparsers.add_parser("config", help="Show or set persisted settings (e.g. the LLM provider)")
     config_sub = config_parser.add_subparsers(dest="config_command", required=True)
     config_sub.add_parser("show", help="Print the effective settings and where they came from")
@@ -186,9 +236,13 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # config commands touch no models, index, or network.
+    # config/models commands run without the engine (at most a best-effort Ollama HTTP call).
     if args.command == "config":
         _run_config_command(args)
+        return
+
+    if args.command == "models":
+        _run_models_command()
         return
 
     if args.command == "index":

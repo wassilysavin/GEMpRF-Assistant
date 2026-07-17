@@ -1,7 +1,8 @@
-"""Startup hardware preflight: benchmark local Ollama once and suggest the hosted chat / xAI API when the machine is too slow."""
+"""Startup preflight: instant model-size gate + one-shot local Ollama speed benchmark; suggest the hosted chat / xAI API when either is insufficient."""
 import json
 import os
 import platform
+import re
 import shutil
 import sys
 import urllib.request
@@ -12,6 +13,8 @@ from .config import get_settings
 MIN_OK_TOK_S = 8.0
 MIN_FAST_TOK_S = 15.0
 MIN_RAM_GB = 8.0
+# Sub-4B models fail grounded-reasoning probes (rule application, arithmetic, negation) that 7B+ pass.
+MIN_PARAMS_B = 4.0
 
 _BENCH_PROMPT = "Briefly explain what a population receptive field is."
 _BENCH_TOKENS = 64
@@ -54,12 +57,12 @@ def _ollama_native_base() -> str:
     return get_settings().ollama_base_url.rstrip("/").removesuffix("/v1")
 
 
-def benchmark_tok_s(model: str, timeout: float = 300.0) -> float | None:
-    """Generation speed (tokens/sec) from one short Ollama completion, or None when unreachable."""
+def _ollama_generate(model: str, prompt: str, timeout: float = 300.0) -> dict | None:
+    """One non-streaming completion via the native Ollama API, or None when unreachable/failed."""
     payload = json.dumps(
         {
             "model": model,
-            "prompt": _BENCH_PROMPT,
+            "prompt": prompt,
             "stream": False,
             "options": {"num_predict": _BENCH_TOKENS, "temperature": 0},
         }
@@ -71,14 +74,61 @@ def benchmark_tok_s(model: str, timeout: float = 300.0) -> float | None:
     )
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
-            data = json.loads(response.read())
+            return json.loads(response.read())
     except Exception:
+        return None
+
+
+def benchmark_tok_s(model: str, timeout: float = 300.0) -> float | None:
+    """Generation speed (tokens/sec) from one short Ollama completion, or None when unreachable."""
+    data = _ollama_generate(model, _BENCH_PROMPT, timeout=timeout)
+    if data is None:
         return None
     duration_s = data.get("eval_duration", 0) / 1e9
     count = data.get("eval_count", 0)
     if duration_s <= 0 or not count:
         return None
     return count / duration_s
+
+
+def parse_params_b(size: str) -> float | None:
+    """Billions of parameters from an Ollama parameter_size string like '7.6B' or '494M', or None."""
+    match = re.fullmatch(r"([\d.]+)\s*([MB])", size.strip().upper())
+    if not match:
+        return None
+    value = float(match.group(1))
+    return value / 1000 if match.group(2) == "M" else value
+
+
+def ollama_model_tags(timeout: float = 5.0) -> list[dict] | None:
+    """Raw /api/tags model entries (name + details incl. parameter_size), or None when Ollama is unreachable."""
+    try:
+        with urllib.request.urlopen(_ollama_native_base() + "/api/tags", timeout=timeout) as response:
+            data = json.loads(response.read())
+    except Exception:
+        return None
+    return [m for m in data.get("models", []) if m.get("name")]
+
+
+def installed_ollama_models(timeout: float = 5.0) -> list[str] | None:
+    """Names of locally installed Ollama models, or None when Ollama is unreachable."""
+    tags = ollama_model_tags(timeout=timeout)
+    return None if tags is None else [m["name"] for m in tags]
+
+
+def model_params_b(model: str, timeout: float = 5.0) -> float | None:
+    """Model size in billions of parameters from /api/show (instant, no generation), or None when unavailable."""
+    request = urllib.request.Request(
+        _ollama_native_base() + "/api/show",
+        data=json.dumps({"model": model}).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            data = json.loads(response.read())
+    except Exception:
+        return None
+    return parse_params_b(str(data.get("details", {}).get("parameter_size", "")))
 
 
 def _cache_path() -> Path:
@@ -108,6 +158,11 @@ def _warn(message: str) -> None:
     print(f"[preflight] {message}", file=sys.stderr)
 
 
+def cached_entry(model: str) -> dict | None:
+    """The cached preflight result for a model, if any."""
+    return _load_cache().get(model)
+
+
 def _report(model: str, entry: dict) -> None:
     kind, tok_s = entry.get("verdict"), entry.get("tok_s")
     if kind == "ok":
@@ -120,13 +175,24 @@ def _report(model: str, entry: dict) -> None:
         _warn(f"local {model} benchmarked at {tok_s:.1f} tokens/s — usable but slow; for faster answers, {_SUGGESTION}")
 
 
+def _check_model_strength(model: str) -> None:
+    """Instant size gate from Ollama metadata: warn when the model is too small for reliable grounded answers."""
+    params_b = model_params_b(model)
+    if params_b is not None and params_b < MIN_PARAMS_B:
+        _warn(
+            f"local {model} has only {params_b:.1f}B parameters — likely not strong enough for "
+            f"reliable grounded answers; prefer a {MIN_PARAMS_B:.0f}B+ model, {_SUGGESTION}"
+        )
+
+
 def check_local_llm() -> None:
-    """Warn (benchmarking once per model, then cached) when local inference is too slow; never raises or blocks startup on failure."""
+    """Warn when the local model is too small (instant metadata check) or the machine too slow (benchmarked once per model, then cached); never raises or blocks startup."""
     if not get_settings().preflight_enabled:
         return
     if not uses_local_ollama():
         return
     model = get_settings().ollama_model
+    _check_model_strength(model)
     cached = _load_cache().get(model)
     if cached is not None:
         _report(model, cached)
