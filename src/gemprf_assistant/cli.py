@@ -165,7 +165,11 @@ def _run_models_command() -> None:
     provider = settings.resolve_llm_provider()
     tags = ollama_model_tags()
     if tags is None:
-        print("Could not reach Ollama — is it running? (install from https://ollama.com, then `ollama pull <model>`)")
+        print(
+            "Could not reach Ollama — local models run through Ollama specifically (install from "
+            "https://ollama.com, start it, then `ollama pull <model>`). For a different local runtime, "
+            "use the hosted xAI/OpenAI path instead."
+        )
         return
     if not tags:
         print("No Ollama models installed yet — pull one with `ollama pull <model>`.")

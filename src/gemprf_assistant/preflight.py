@@ -207,7 +207,10 @@ def check_local_llm() -> None:
     _warn(f"benchmarking local {model} once to check this machine's speed{hint}...")
     tok_s = benchmark_tok_s(model)
     if tok_s is None:
-        _warn(f"could not reach Ollama to benchmark {model}; if local inference is unavailable, {_SUGGESTION}")
+        _warn(
+            f"could not reach Ollama at {_ollama_native_base()} to benchmark {model} — local mode needs "
+            f"Ollama running (https://ollama.com). If you use a different local runtime, {_SUGGESTION}"
+        )
         return
     entry = {"verdict": verdict(tok_s), "tok_s": round(tok_s, 1)}  # type: ignore[dict-item]
     _save_cache_entry(model, entry)

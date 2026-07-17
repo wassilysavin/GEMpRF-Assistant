@@ -179,6 +179,8 @@ Set one of:
 
 Pin the provider explicitly with `gemprf-assistant config set llm_provider ollama|xai|openai` (or `GEMPRF_ASSISTANT_LLM_PROVIDER` for a one-off).
 
+Local inference goes through **Ollama specifically** — that's what the model picker and the strength/speed preflight drive. If you run models on a different local server (llama.cpp, LM Studio, vLLM, …), point the assistant at a hosted API instead (`XAI_API_KEY` / `OPENAI_API_KEY`); those local runtimes aren't supported as an LLM backend here.
+
 #### Run
 
 ```bash
