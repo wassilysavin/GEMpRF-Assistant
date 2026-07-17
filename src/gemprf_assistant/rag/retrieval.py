@@ -1,9 +1,9 @@
-import os
 from collections import defaultdict
 from dataclasses import dataclass
 
 import numpy as np
 
+from ..config import get_settings
 from ..models import RetrievedChunk
 from .knowledge_graph import KnowledgeGraphStore
 from .vector_store import ChunkHit, SectionHit, WeaviateHierarchicalStore
@@ -63,11 +63,7 @@ def _minmax_values(values: dict[str, float]) -> dict[str, float]:
 
 def _default_alpha() -> float:
     """Read the env-tunable hybrid alpha for Weaviate's vector/BM25 blend."""
-    raw = os.getenv("GEMPRF_ASSISTANT_HYBRID_ALPHA", "0.5")
-    try:
-        value = float(raw)
-    except ValueError:
-        return 0.5
+    value = get_settings().hybrid_alpha
     return max(0.0, min(1.0, value))
 
 

@@ -15,7 +15,7 @@ MANIFEST_NAME = "snapshot_manifest.json"
 def _backend_name() -> str:
     """Best-effort name of the currently configured embedding backend (the one that built the index)."""
     try:
-        from .embeddings import build_embedding_backend
+        from .providers import build_embedding_backend
         return build_embedding_backend().backend_name
     except Exception:
         return "unknown"

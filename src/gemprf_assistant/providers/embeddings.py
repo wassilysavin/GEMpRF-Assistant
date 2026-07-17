@@ -1,17 +1,19 @@
-import os
+"""Embedding-backend factory and implementations (sentence-transformers local, OpenAI-compatible remote)."""
 from collections.abc import Sequence
 from typing import Protocol
 
 import numpy as np
 
+from ..config import Settings, get_settings
+
 try:
     from langchain_openai import OpenAIEmbeddings
-except Exception: 
+except Exception:
     OpenAIEmbeddings = None
 
 try:
     from sentence_transformers import SentenceTransformer
-except Exception: 
+except Exception:
     SentenceTransformer = None
 
 
@@ -29,22 +31,22 @@ class EmbeddingBackend(Protocol):
     backend_name: str
 
     def embed_texts(self, texts: Sequence[str]) -> np.ndarray:
-        """Return one L2-normalised float32 vector per text in 'texts'.
-        """
+        """Return one L2-normalised float32 vector per text in 'texts'."""
         ...
 
 
 class SentenceTransformerEmbeddingBackend:
 
-    def __init__(self, model_name: str, local_files_only: bool = False) -> None:
+    def __init__(self, model_name: str, local_files_only: bool = False, settings: Settings | None = None) -> None:
         if SentenceTransformer is None:
             raise RuntimeError("sentence-transformers is not installed.")
+        s = settings or get_settings()
         self.backend_name = f"sentence-transformers:{model_name}"
         self._model = SentenceTransformer(model_name, local_files_only=local_files_only)
         # Instruction-tuned models (e5, bge-en) need a query/passage prefix;
         # env-configurable, auto-defaulted by family, empty for plain models.
-        qp = os.getenv("GEMPRF_ASSISTANT_EMBED_QUERY_PREFIX")
-        dp = os.getenv("GEMPRF_ASSISTANT_EMBED_DOC_PREFIX")
+        qp = s.embed_query_prefix
+        dp = s.embed_doc_prefix
         ml = model_name.lower()
         if qp is None and dp is None:
             if "e5" in ml:
@@ -94,67 +96,49 @@ class OpenAIEmbeddingBackend:
         return _normalize_rows(vectors)
 
 
-def build_embedding_backend() -> EmbeddingBackend:
-    provider = os.getenv("GEMPRF_ASSISTANT_EMBEDDING_PROVIDER", "").strip().lower()
+def build_embedding_backend(settings: Settings | None = None) -> EmbeddingBackend:
+    s = settings or get_settings()
+    provider = s.embedding_provider
 
     if provider == "openai":
-        model_name = os.getenv("GEMPRF_ASSISTANT_OPENAI_EMBEDDING_MODEL", "text-embedding-3-large")
-        return OpenAIEmbeddingBackend(model_name=model_name)
+        return OpenAIEmbeddingBackend(model_name=s.openai_embedding_model)
 
     if provider == "xai":
-        model_name = os.getenv("GEMPRF_ASSISTANT_XAI_EMBEDDING_MODEL", "").strip()
+        model_name = (s.xai_embedding_model or "").strip()
         if not model_name:
             raise RuntimeError(
                 "Set 'GEMPRF_ASSISTANT_XAI_EMBEDDING_MODEL' to an embedding model available on your xAI account."
             )
-        api_key = os.getenv("XAI_API_KEY")
-        if not api_key:
+        if not s.xai_api_key:
             raise RuntimeError("Set `XAI_API_KEY` to use xAI embeddings.")
-        return OpenAIEmbeddingBackend(
-            model_name=model_name,
-            api_key=api_key,
-            base_url=os.getenv("GEMPRF_ASSISTANT_XAI_BASE_URL", "https://api.x.ai/v1"),
-        )
+        return OpenAIEmbeddingBackend(model_name=model_name, api_key=s.xai_api_key, base_url=s.xai_base_url)
 
     if provider in {"openai-compatible", "openai_compatible"}:
-        model_name = os.getenv("GEMPRF_ASSISTANT_OPENAI_COMPAT_EMBEDDING_MODEL", "").strip()
-        api_key = os.getenv("GEMPRF_ASSISTANT_OPENAI_COMPAT_API_KEY", "").strip()
-        base_url = os.getenv("GEMPRF_ASSISTANT_OPENAI_COMPAT_BASE_URL", "").strip()
-        if not (model_name and api_key and base_url):
+        if not (s.openai_compat_embedding_model and s.openai_compat_api_key and s.openai_compat_base_url):
             raise RuntimeError(
                 "Set 'GEMPRF_ASSISTANT_OPENAI_COMPAT_EMBEDDING_MODEL', "
                 "'GEMPRF_ASSISTANT_OPENAI_COMPAT_API_KEY', and 'GEMPRF_ASSISTANT_OPENAI_COMPAT_BASE_URL'."
             )
-        return OpenAIEmbeddingBackend(model_name=model_name, api_key=api_key, base_url=base_url)
-
-    allow_download = os.getenv("GEMPRF_ASSISTANT_EMBEDDING_ALLOW_DOWNLOAD", "").strip().lower() in {"1", "true", "yes"}
-    local_only = not allow_download
-    sentence_model = os.getenv(
-        "GEMPRF_ASSISTANT_EMBEDDING_MODEL",
-        "intfloat/e5-large-v2",
-    )
+        return OpenAIEmbeddingBackend(
+            model_name=s.openai_compat_embedding_model,
+            api_key=s.openai_compat_api_key,
+            base_url=s.openai_compat_base_url,
+        )
 
     if provider in {"", "sentence-transformers", "sentence_transformers", "local"}:
         try:
             return SentenceTransformerEmbeddingBackend(
-                model_name=sentence_model,
-                local_files_only=local_only,
+                model_name=s.embedding_model,
+                local_files_only=not s.embedding_allow_download,
+                settings=s,
             )
         except Exception as sentence_error:
-            xai_embedding_model = os.getenv("GEMPRF_ASSISTANT_XAI_EMBEDDING_MODEL")
-            if os.getenv("XAI_API_KEY") and xai_embedding_model:
+            if s.xai_api_key and s.xai_embedding_model:
                 return OpenAIEmbeddingBackend(
-                    model_name=xai_embedding_model,
-                    api_key=os.getenv("XAI_API_KEY"),
-                    base_url=os.getenv("GEMPRF_ASSISTANT_XAI_BASE_URL", "https://api.x.ai/v1"),
+                    model_name=s.xai_embedding_model, api_key=s.xai_api_key, base_url=s.xai_base_url
                 )
-            if os.getenv("OPENAI_API_KEY"):
-                model_name = os.getenv("GEMPRF_ASSISTANT_OPENAI_EMBEDDING_MODEL", "text-embedding-3-large")
-                return OpenAIEmbeddingBackend(model_name=model_name)
-            raise RuntimeError(
-                "Could not initialize an embeddings backend. "
-            ) from sentence_error
+            if s.openai_api_key:
+                return OpenAIEmbeddingBackend(model_name=s.openai_embedding_model)
+            raise RuntimeError("Could not initialize an embeddings backend. ") from sentence_error
 
-    raise RuntimeError(
-        "Unsupported embedding provider."
-    )
+    raise RuntimeError("Unsupported embedding provider.")

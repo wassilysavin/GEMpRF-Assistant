@@ -1,6 +1,6 @@
-import os
 from collections.abc import Sequence
 
+from ..config import get_settings
 from ..models import RetrievedChunk
 
 try:
@@ -15,13 +15,10 @@ _DEFAULT_MODEL = "BAAI/bge-reranker-v2-m3"
 class CrossEncoderReranker:
 
     def __init__(self, model_name: str | None = None, allow_download: bool | None = None, device: str | None = None) -> None:
-        self.model_name = model_name or os.getenv("GEMPRF_ASSISTANT_RERANKER_MODEL", _DEFAULT_MODEL)
-        self._allow_download = (
-            allow_download
-            if allow_download is not None
-            else os.getenv("GEMPRF_ASSISTANT_RERANKER_ALLOW_DOWNLOAD", "").strip().lower() in {"1", "true", "yes"}
-        )
-        self._device = device or (os.getenv("GEMPRF_ASSISTANT_RERANKER_DEVICE") or None)
+        s = get_settings()
+        self.model_name = model_name or s.reranker_model or _DEFAULT_MODEL
+        self._allow_download = allow_download if allow_download is not None else s.reranker_allow_download
+        self._device = device or s.reranker_device
         self._model = None
         self._init_error: str | None = None
         self._tried_load = False
@@ -93,7 +90,6 @@ class CrossEncoderReranker:
 
 
 def build_reranker() -> CrossEncoderReranker | None:
-    flag = os.getenv("GEMPRF_ASSISTANT_RERANKER_ENABLED", "1").strip().lower()
-    if flag in {"0", "false", "no", "off"}:
+    if not get_settings().reranker_enabled:
         return None
     return CrossEncoderReranker()

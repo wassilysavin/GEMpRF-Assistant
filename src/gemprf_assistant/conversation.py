@@ -1,10 +1,10 @@
 """In-session conversation history: a rolling window of answered turns so follow-up questions can resolve references ("it", "that parameter", "what value in my case?") by an LLM condense step rather than hand-written phrase patterns."""
-import os
 from dataclasses import dataclass
 
 from langchain_core.prompts import ChatPromptTemplate
 
 from . import tracing
+from .config import get_settings
 
 _DEFAULT_MAX_TURNS = 4
 # Per-turn answer cap keeps the history block's LLM prefill bounded.
@@ -27,15 +27,12 @@ _CONDENSE_HUMAN = "Conversation:\n{history}\n\nLatest question: {question}\n\nSt
 
 def history_enabled() -> bool:
     """Conversation history toggle (env GEMPRF_ASSISTANT_HISTORY, default on)."""
-    return os.getenv("GEMPRF_ASSISTANT_HISTORY", "1").strip() != "0"
+    return get_settings().history_enabled
 
 
 def _max_turns() -> int:
     """Rolling-window size (env GEMPRF_ASSISTANT_HISTORY_TURNS, default 4)."""
-    try:
-        return max(1, int(os.getenv("GEMPRF_ASSISTANT_HISTORY_TURNS", str(_DEFAULT_MAX_TURNS))))
-    except ValueError:
-        return _DEFAULT_MAX_TURNS
+    return get_settings().history_turns
 
 
 @dataclass(frozen=True)

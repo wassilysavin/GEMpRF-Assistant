@@ -7,6 +7,8 @@ import sys
 import urllib.request
 from pathlib import Path
 
+from .config import get_settings
+
 MIN_OK_TOK_S = 8.0
 MIN_FAST_TOK_S = 15.0
 MIN_RAM_GB = 8.0
@@ -20,11 +22,8 @@ _SUGGESTION = (
 
 
 def uses_local_ollama() -> bool:
-    """True when llm.build_chat_llm would resolve to the local Ollama provider."""
-    provider = os.getenv("GEMPRF_ASSISTANT_LLM_PROVIDER", "").strip().lower()
-    if provider:
-        return provider == "ollama"
-    return not (os.getenv("OPENAI_API_KEY") or os.getenv("XAI_API_KEY"))
+    """True when build_chat_llm would resolve to the local Ollama provider."""
+    return get_settings().resolve_llm_provider() == "ollama"
 
 
 def total_ram_gb() -> float | None:
@@ -52,8 +51,7 @@ def verdict(tok_s: float) -> str:
 
 
 def _ollama_native_base() -> str:
-    base = os.getenv("GEMPRF_ASSISTANT_OLLAMA_BASE_URL", "http://localhost:11434/v1")
-    return base.rstrip("/").removesuffix("/v1")
+    return get_settings().ollama_base_url.rstrip("/").removesuffix("/v1")
 
 
 def benchmark_tok_s(model: str, timeout: float = 300.0) -> float | None:
@@ -124,11 +122,11 @@ def _report(model: str, entry: dict) -> None:
 
 def check_local_llm() -> None:
     """Warn (benchmarking once per model, then cached) when local inference is too slow; never raises or blocks startup on failure."""
-    if os.getenv("GEMPRF_ASSISTANT_PREFLIGHT", "1").strip().lower() in {"0", "false", "no"}:
+    if not get_settings().preflight_enabled:
         return
     if not uses_local_ollama():
         return
-    model = os.getenv("GEMPRF_ASSISTANT_OLLAMA_MODEL", "mistral-nemo:12b")
+    model = get_settings().ollama_model
     cached = _load_cache().get(model)
     if cached is not None:
         _report(model, cached)

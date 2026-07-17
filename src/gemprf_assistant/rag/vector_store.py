@@ -1,4 +1,3 @@
-import os
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,8 +9,8 @@ from weaviate.classes.data import DataObject
 from weaviate.classes.query import Filter, MetadataQuery
 from weaviate.util import generate_uuid5
 
+from ..config import get_settings
 from ..models import Chunk, ChunkMetadata, ParentSection
-from ..paths import data_dir
 
 SECTION_COLLECTION = "GemPrfSection"
 CHUNK_COLLECTION = "GemPrfChunk"
@@ -44,15 +43,12 @@ class WeaviateHierarchicalStore:
         http_port: int | None = None,
         grpc_port: int | None = None,
     ) -> None:
-        self._persistence_path = (
-            persistence_path
-            or os.getenv("GEMPRF_ASSISTANT_WEAVIATE_PATH")
-            or str(data_dir() / "weaviate")
-        )
-        self._mode = (connect_to or os.getenv("GEMPRF_ASSISTANT_WEAVIATE_MODE") or "embedded").strip().lower()
-        self._host = host or os.getenv("GEMPRF_ASSISTANT_WEAVIATE_HOST", "localhost")
-        self._http_port = http_port or int(os.getenv("GEMPRF_ASSISTANT_WEAVIATE_HTTP_PORT", "8080"))
-        self._grpc_port = grpc_port or int(os.getenv("GEMPRF_ASSISTANT_WEAVIATE_GRPC_PORT", "50051"))
+        s = get_settings()
+        self._persistence_path = persistence_path or s.resolved_weaviate_path()
+        self._mode = (connect_to or s.weaviate_mode).strip().lower()
+        self._host = host or s.weaviate_host
+        self._http_port = http_port or s.weaviate_http_port
+        self._grpc_port = grpc_port or s.weaviate_grpc_port
         self._client: weaviate.WeaviateClient | None = None
 
     @property
@@ -71,8 +67,8 @@ class WeaviateHierarchicalStore:
         Path(self._persistence_path).mkdir(parents=True, exist_ok=True)
         return weaviate.connect_to_embedded(
             persistence_data_path=self._persistence_path,
-            port=int(os.getenv("GEMPRF_ASSISTANT_WEAVIATE_EMBEDDED_HTTP_PORT", "8079")),
-            grpc_port=int(os.getenv("GEMPRF_ASSISTANT_WEAVIATE_EMBEDDED_GRPC_PORT", "50050")),
+            port=get_settings().weaviate_embedded_http_port,
+            grpc_port=get_settings().weaviate_embedded_grpc_port,
             environment_variables={"LOG_LEVEL": "panic"},
         )
 

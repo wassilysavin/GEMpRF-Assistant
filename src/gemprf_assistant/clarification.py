@@ -1,11 +1,11 @@
 """Clarification intake: when the engine can't ground an answer, plan question-specific aspects from the failed analysis (falling back to a fixed checklist), ask one question per round over the engine's public analyze(), fold the replies into the query, and answer once."""
-import os
 import re
 from collections.abc import Callable
 
 from langchain_core.prompts import ChatPromptTemplate
 
 from . import tracing
+from .config import get_settings
 from .models import QueryAnalysis
 from .rag.parameter_relations import PARAMETER_MATRIX
 from .rag.prompts import INSUFFICIENT_EVIDENCE_MESSAGE
@@ -130,7 +130,7 @@ _QUESTION_KINDS = ("vague", "offtopic", "ontopic")
 
 
 def _classify_enabled() -> bool:
-    return os.getenv("GEMPRF_ASSISTANT_CLARIFY_CLASSIFY", "1").strip() != "0"
+    return get_settings().clarify_classify
 
 
 def classify_question(llm, question: str) -> str:
@@ -156,11 +156,11 @@ def _top_evidence(analysis: QueryAnalysis) -> float:
 
 
 def _min_evidence_score() -> float:
-    return float(os.getenv("GEMPRF_ASSISTANT_CLARIFY_MIN_SCORE", str(_DEFAULT_MIN_EVIDENCE_SCORE)))
+    return get_settings().clarify_min_score
 
 
 def _direct_confidence_floor() -> float:
-    return float(os.getenv("GEMPRF_ASSISTANT_CLARIFY_DIRECT_FLOOR", str(_DEFAULT_DIRECT_CONFIDENCE_FLOOR)))
+    return get_settings().clarify_direct_floor
 
 
 def is_in_scope(analysis: QueryAnalysis) -> bool:
@@ -175,11 +175,11 @@ def is_overconfident_direct(analysis: QueryAnalysis) -> bool:
 
 
 def _fewshot_enabled() -> bool:
-    return os.getenv("GEMPRF_ASSISTANT_CLARIFY_FEWSHOT", "1").strip() != "0"
+    return get_settings().clarify_fewshot
 
 
 def _planner_enabled() -> bool:
-    return os.getenv("GEMPRF_ASSISTANT_CLARIFY_PLANNER", "1").strip() != "0"
+    return get_settings().clarify_planner
 
 
 def _failure_mode(analysis: QueryAnalysis) -> str:
@@ -276,7 +276,7 @@ def _context_block(asked: list[tuple[str, str]]) -> str:
 
 
 def _reformulate_enabled() -> bool:
-    return os.getenv("GEMPRF_ASSISTANT_CLARIFY_REFORMULATE", "1").strip() != "0"
+    return get_settings().clarify_reformulate
 
 
 def reformulate_query(llm, question: str, asked: list[tuple[str, str]]) -> str | None:
@@ -337,7 +337,7 @@ _MATRIX_BODY = PARAMETER_MATRIX.split("\n\n", 1)[1] if "\n\n" in PARAMETER_MATRI
 
 
 def _mechanism_enabled() -> bool:
-    return os.getenv("GEMPRF_ASSISTANT_CLARIFY_MECHANISM", "1").strip() != "0"
+    return get_settings().clarify_mechanism
 
 
 def _to_mechanism_answer(analysis: QueryAnalysis) -> QueryAnalysis:
@@ -423,7 +423,7 @@ def generate_intake_question(
 
 
 def _default_max_rounds() -> int:
-    return max(1, int(os.getenv("GEMPRF_ASSISTANT_CLARIFY_MAX_ROUNDS", str(len(INTAKE_ASPECTS)))))
+    return get_settings().clarify_max_rounds or len(INTAKE_ASPECTS)
 
 
 def answer_with_clarification(

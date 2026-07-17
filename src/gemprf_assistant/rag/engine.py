@@ -1,4 +1,3 @@
-import os
 import re
 from dataclasses import asdict, replace
 from pathlib import Path
@@ -7,9 +6,8 @@ import numpy as np
 from langchain_core.prompts import ChatPromptTemplate
 
 from .. import tracing
-from ..embeddings import EmbeddingBackend, build_embedding_backend
+from ..config import get_settings
 from ..knowledge_base import load_documents, parameter_map, source_map
-from ..llm import build_chat_llm
 from ..models import (
     AnswerResult,
     Citation,
@@ -19,7 +17,7 @@ from ..models import (
     RetrievedChunk,
     SourceMeta,
 )
-from ..paths import data_dir
+from ..providers import EmbeddingBackend, build_chat_llm, build_embedding_backend
 from .chunking import ChunkingConfig, split_documents
 from .knowledge_graph import ChunkTriple, KnowledgeGraphStore
 from .parameter_relations import (
@@ -65,10 +63,7 @@ def _rerank_pool_size() -> int:
     halving 24->12 roughly halves it with no hit@6 change in eval. Read per-call
     so the env knob applies regardless of import order.
     """
-    try:
-        return max(1, int(os.getenv("GEMPRF_ASSISTANT_RERANK_POOL", str(_DEFAULT_RERANK_POOL_SIZE))))
-    except ValueError:
-        return _DEFAULT_RERANK_POOL_SIZE
+    return get_settings().rerank_pool
 
 
 def _evidence_char_cap() -> int:
@@ -77,10 +72,7 @@ def _evidence_char_cap() -> int:
     Trims LLM-facing chunk text only (not retrieval, rerank, or citations) to cut
     prefill, the dominant LLM cost. Off by default; validate against eval before raising.
     """
-    try:
-        return max(0, int(os.getenv("GEMPRF_ASSISTANT_LLM_EVIDENCE_CHAR_CAP", "0")))
-    except ValueError:
-        return 0
+    return get_settings().evidence_char_cap
 
 
 def _cap_text(text: str, cap: int) -> str:
@@ -147,7 +139,7 @@ def _chunk_summaries(chunks: list["RetrievedChunk"]) -> list[dict]:
 
 
 def _default_kg_path() -> Path:
-    return Path(os.getenv("GEMPRF_ASSISTANT_KG_PATH", str(data_dir() / "kg.ttl")))
+    return get_settings().resolved_kg_path()
 
 
 class GraphRagEngine:
@@ -482,7 +474,7 @@ class GraphRagEngine:
         rather than reorders, so prose-led top_k — and conceptual answers — stay unchanged; the
         code is merely made available for the answer prompt to quote when the question wants it.
         """
-        if os.getenv("GEMPRF_ASSISTANT_CODE_RECALL", "1").strip() == "0" or not matched_specs:
+        if not get_settings().code_recall or not matched_specs:
             return evidence
         top = matched_specs[0]
         if matched_scores.get(top.id, 0.0) < _CODE_RECALL_MIN_SCORE:
@@ -612,8 +604,8 @@ class GraphRagEngine:
 
     def _expansion_skip_reason(self, question: str) -> str:
         """Why expand_query passed the question through unchanged (for the trace span)."""
-        hyde_on = os.getenv("GEMPRF_ASSISTANT_HYDE", "0").strip() == "1"
-        rewrite_on = os.getenv("GEMPRF_ASSISTANT_QUERY_REWRITE", "1").strip() != "0"
+        hyde_on = get_settings().hyde
+        rewrite_on = get_settings().query_rewrite
         if not hyde_on and not rewrite_on:
             return "expansion disabled (GEMPRF_ASSISTANT_HYDE=0, GEMPRF_ASSISTANT_QUERY_REWRITE=0)"
         if self.llm is None:
@@ -626,7 +618,7 @@ class GraphRagEngine:
     def _hyde_query(self, question: str) -> str | None:
         """HyDE expansion
         """
-        if os.getenv("GEMPRF_ASSISTANT_HYDE", "0").strip() != "1":
+        if not get_settings().hyde:
             return None
         if self.llm is None:
             return None
@@ -652,7 +644,7 @@ class GraphRagEngine:
     def _rewrite_query(self, question: str) -> str | None:
         """Append LLM-suggested domain keywords to the original question for retrieval only.
         """
-        if os.getenv("GEMPRF_ASSISTANT_QUERY_REWRITE", "1").strip() == "0":
+        if not get_settings().query_rewrite:
             return None
         if self.llm is None:
             return None
@@ -696,7 +688,7 @@ class GraphRagEngine:
     ) -> tuple[str, bool]:
         if self.llm is not None:
             import time as _time
-            attempts = int(os.getenv("GEMPRF_ASSISTANT_LLM_RETRIES", "3"))
+            attempts = get_settings().llm_retries
             last_exc = None
             for i in range(attempts):
                 try:
@@ -766,7 +758,7 @@ class GraphRagEngine:
     ) -> str | None:
         """Grounded fallback for the refusal paths: target the parameter the question names or
         confidently matches, else fall back to the universal parameter-interaction matrix."""
-        if os.getenv("GEMPRF_ASSISTANT_RELATIONS", "1").strip() == "0":
+        if not get_settings().relations_enabled:
             return None
         if model_capability_question(question):
             return MODEL_CAPABILITY_ANSWER
